@@ -12,7 +12,9 @@ class SquaredLoss:
             Yhat.shape[0] == Y.shape[0] and Yhat.shape[1] == Y.shape[1]
         ), "forward: Yhat, Y shape mismatch"
 
+        # reduction : sum
         # Loss = np.linalg.norm(Yhat - Y, axis=0) ** 2
+        # reduction : mean
         Loss = np.square(Yhat - Y)
 
         Loss = np.mean(Loss)
