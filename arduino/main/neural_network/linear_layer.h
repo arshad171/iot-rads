@@ -64,7 +64,7 @@ class LinearLayer {
   BLA::Matrix<TinputSize, TbatchSize> backward(BLA::Matrix<ToutputSize, TbatchSize> dLdY) {
     BLA::Matrix<TinputSize, TbatchSize> dLdX;
     
-    dLdX = this->weights * dLdY;
+    dLdX = ~this->weights * dLdY;
     
     return dLdX;
   }
@@ -77,7 +77,7 @@ class LinearLayer {
   BLA::Matrix<ToutputSize, TinputSize> gradWeights(BLA::Matrix<ToutputSize, TbatchSize> dLdY) {
     BLA::Matrix<ToutputSize, TinputSize> dLdW;
     
-    dLdW = dLdY * ~this.lastX;
+    dLdW = dLdY * ~this->lastX;
     
     return dLdW;
   }

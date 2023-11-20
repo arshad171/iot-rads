@@ -34,9 +34,9 @@ void loop() {
   x.Fill(1.0);
   dLdY.Fill(0.5);
 
-  // y = layer1.forward(x);
-  // dLdX = layer1.backward(dLdY);
-  // dLdW = layer1.gradWeights(dLdY);
+  y = layer1.forward(x);
+  dLdX = layer1.backward(dLdY);
+  dLdW = layer1.gradWeights(dLdY);
   dLdb = layer1.gradBias(dLdY);
 
   Serial.println(y(0, 0));
