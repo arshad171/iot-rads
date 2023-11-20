@@ -4,20 +4,6 @@
 
 using namespace BLA;
 
-// template<int r, int c>
-// BLA::Matrix<r, 1> fun(BLA::Matrix<r, c> matrix1) {
-//   BLA::Matrix<r, 1> ret;
-//   ret.Fill(0.0);
-
-//   for(int rr=0; rr < r; rr++) {
-//     for(int cc=0; cc < c; cc++) {
-//       ret(rr, 0) += matrix1(rr, cc);
-//     }
-//   }
-
-//   return ret;
-// }
-
 template <int TinputSize, int ToutputSize, int TbatchSize>
 class LinearLayer {
   public:
