@@ -2,6 +2,9 @@
 
 using namespace BLA;
 
+#ifndef _MATRIX_UTILS_H
+#define _MATRIX_UTILS_H
+
 template<int r, int c>
 float matrixDot(BLA::Matrix<r, c> matrix1, BLA::Matrix<r, c> matrix2);
 
@@ -68,3 +71,5 @@ BLA::Matrix<r, 1> sumCols(BLA::Matrix<r, c> matrix) {
 
   return ret;
 }
+
+#endif

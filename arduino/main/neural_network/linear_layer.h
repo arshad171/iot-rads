@@ -21,9 +21,9 @@ class LinearLayer {
     this->outputSize = ToutputSize;
     this->batchSize = TbatchSize;
 
-    lastX.Fill(0.0);
-    weights.Fill(1.0);
-    bias.Fill(1.0);
+    this->lastX.Fill(0.0);
+    this->weights.Fill(1.0);
+    this->bias.Fill(1.0);
   }
 
   /*

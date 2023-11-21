@@ -3,6 +3,7 @@
 #include "neural_network/layer_test.h"
 #include "neural_network/base_layer.h"
 #include "neural_network/linear_layer.h"
+#include "neural_network/relu_layer.h"
 
 using namespace BLA;
 
