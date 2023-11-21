@@ -1,7 +1,5 @@
 #include <BasicLinearAlgebra.h>
 
-#include "neural_network/layer_test.h"
-#include "neural_network/base_layer.h"
 #include "neural_network/linear_layer.h"
 #include "neural_network/relu_layer.h"
 #include "neural_network/squared_loss.h"
@@ -10,11 +8,6 @@ using namespace BLA;
 
 void setup() {
   // put your setup code here, to run once:
-  // LayerTest* layer1 = new LayerTest();
-  // layer1->function();
-
-  // LayerTest layer2;
-  // layer2.function();
   Serial.begin(9600);
 }
 
