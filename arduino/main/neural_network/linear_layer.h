@@ -1,5 +1,3 @@
-#include <BasicLinearAlgebra.h>
-
 #include "matrix_utils.h"
 
 using namespace BLA;
@@ -22,8 +20,14 @@ class LinearLayer {
     this->batchSize = TbatchSize;
 
     this->lastX.Fill(0.0);
-    this->weights.Fill(1.0);
-    this->bias.Fill(1.0);
+    this->bias.Fill(0.0);
+    // init weights
+    // unifrom initialzer
+    for(int r = 0; r < ToutputSize; r++) {
+      for(int c = 0; c < TinputSize; c++) {
+        this->weights(r, c) = float(random(-500, 500) / 1000.0);
+      }
+    }
   }
 
   /*
