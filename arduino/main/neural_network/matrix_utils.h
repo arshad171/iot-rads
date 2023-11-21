@@ -5,17 +5,17 @@ using namespace BLA;
 #ifndef _MATRIX_UTILS_H
 #define _MATRIX_UTILS_H
 
-template<int r, int c>
-float matrixDot(BLA::Matrix<r, c> matrix1, BLA::Matrix<r, c> matrix2);
+// template<int r, int c>
+// float matrixDot(BLA::Matrix<r, c> matrix1, BLA::Matrix<r, c> matrix2);
 
-template<int r, int c>
-BLA::Matrix<r, c> elementMul(BLA::Matrix<r, c> matrix1, BLA::Matrix<r, c> matrix2);
+// template<int r, int c>
+// BLA::Matrix<r, c> elementMul(BLA::Matrix<r, c> matrix1, BLA::Matrix<r, c> matrix2);
 
-template<int r, int c>
-BLA::Matrix<1, c> sumRows(BLA::Matrix<r, c> matrix);
+// template<int r, int c>
+// BLA::Matrix<1, c> sumRows(BLA::Matrix<r, c> matrix);
 
-template<int r, int c>
-BLA::Matrix<r, 1> sumCols(BLA::Matrix<r, c> matrix);
+// template<int r, int c>
+// BLA::Matrix<r, 1> sumCols(BLA::Matrix<r, c> matrix);
 
 template<int r, int c>
 float matrixDot(BLA::Matrix<r, c> matrix1, BLA::Matrix<r, c> matrix2) {
