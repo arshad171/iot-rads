@@ -6,6 +6,8 @@
 
 using namespace BLA;
 
+float LEARNING_RATE = 0.0001;
+
 // m, n, N
 const int in1 = 100;
 const int out1 = 10;
@@ -115,21 +117,29 @@ void setup() {
   dLdY4 = rel4.backward(dLdY4);
   dLdW4 = lin4.gradWeights(dLdY4);
   dLdb4 = lin4.gradBias(dLdY4);
+  lin4.weights -= dLdW4 * LEARNING_RATE;
+  lin4.bias -= dLdb4 * LEARNING_RATE;
   dLdY3 = lin4.backward(dLdY4);
 
   dLdY3 = rel3.backward(dLdY3);
   dLdW3 = lin3.gradWeights(dLdY3);
   dLdb3 = lin3.gradBias(dLdY3);
+  lin3.weights -= dLdW3 * LEARNING_RATE;
+  lin3.bias -= dLdb3 * LEARNING_RATE;
   dLdY2 = lin3.backward(dLdY3);
 
   dLdY2 = rel2.backward(dLdY2);
   dLdW2 = lin2.gradWeights(dLdY2);
   dLdb2 = lin2.gradBias(dLdY2);
+  lin2.weights -= dLdW2 * LEARNING_RATE;
+  lin2.bias -= dLdb2 * LEARNING_RATE;
   dLdY1 = lin2.backward(dLdY2);
 
   dLdY1 = rel1.backward(dLdY1);
   dLdW1 = lin1.gradWeights(dLdY1);
   dLdb1 = lin1.gradBias(dLdY1);
+  lin1.weights -= dLdW1 * LEARNING_RATE;
+  lin1.bias -= dLdb1 * LEARNING_RATE;
 
   Serial.println("forward and backward done");
 }
