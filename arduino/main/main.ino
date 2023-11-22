@@ -16,7 +16,7 @@ void loop() {
   // m, n, N
   const int inputSize = 100;
   const int outputSize = 10;
-  const int batchSize = 1;
+  const int batchSize = 2;
   LinearLayer<inputSize, outputSize, batchSize> layer1;
   ReLULayer<outputSize, batchSize> layer2;
   SquaredLoss<outputSize, batchSize> layer3;
@@ -38,12 +38,16 @@ void loop() {
   Serial.println("----- layer 1: linear out ------");
   Serial.println(y(0, 0));
   Serial.println(y(outputSize-1, 0));
+  Serial.println(y(0, batchSize-1));
+  Serial.println(y(outputSize-1, batchSize-1));
 
   y = layer2.forward(y);
 
   Serial.println("----- layer 2: relu out ------");
   Serial.println(y(0, 0));
   Serial.println(y(outputSize-1, 0));
+  Serial.println(y(0, batchSize-1));
+  Serial.println(y(outputSize-1, batchSize-1));
 
   loss = layer3.forward(y, y);
 

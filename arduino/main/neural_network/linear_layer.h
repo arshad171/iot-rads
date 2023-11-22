@@ -37,9 +37,19 @@ class LinearLayer {
   */
   BLA::Matrix<ToutputSize, TbatchSize> forward(BLA::Matrix<TinputSize, TbatchSize> X) {
     BLA::Matrix<ToutputSize, TbatchSize> Y;
+    BLA::Matrix<ToutputSize, TbatchSize> biasBroadcast;
+    biasBroadcast.Fill(0.0);
     
+    for (int c = 0; c < TbatchSize; c++) {
+      for(int r = 0; r < ToutputSize; r++) {
+        biasBroadcast(r, c) = this->bias(r, 0);
+      }
+    }
+
     // (n x m) x (m x 1) + (n x 1)
-    Y = this->weights * X + this->bias;
+    // (n x m) x (m x N) + (n x N)
+    // Y = this->weights * X + this->bias;
+    Y = this->weights * X + biasBroadcast;
 
     // update lastX
     this->lastX = X;
