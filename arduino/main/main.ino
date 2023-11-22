@@ -111,9 +111,11 @@ void setup() {
   h4 = lin4.forward(h3);
   h4 = rel4.forward(h4);
 
+  // loss
   loss = sq.forward(x, h4);
   dLdY4 = sq.backward(x, h4);
 
+  // backward & gradient descent
   dLdY4 = rel4.backward(dLdY4);
   dLdW4 = lin4.gradWeights(dLdY4);
   dLdb4 = lin4.gradBias(dLdY4);
