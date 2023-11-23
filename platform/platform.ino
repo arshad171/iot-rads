@@ -1,6 +1,10 @@
 #include "common.h"
 #include "camera.h"
 #include "protocol.h"
+#include "network.h"
+
+// Platform settings
+#include "settings/device.h"
 
 // Neural network implementation
 #include "neural_network/linear_layer.h"
@@ -19,7 +23,7 @@ void setup() {
     SP.initialize(9600,100);
 
     // Setup logging
-    set_log_lvl(LOGL_LEVEL);
+    set_log_lvl(LOG_LEVEL);
     toggle_logs(true);
 
     // Wait on the serial and notify user
@@ -35,6 +39,9 @@ void setup() {
 
     // Tell the user we completed setup
     digitalWrite(LED_PWR,1);
+
+    // Do stuff
+    do_stuff();
 }
 
 void loop(){
