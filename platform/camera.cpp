@@ -38,8 +38,9 @@ void camera_init(int res,int color,int fps) {
     LOG_SHORT(LOG_DEBUG,"Computing frame CRC32...");
 
     Arduino_CRC32 crc32;
-    if(crc32.calc(data,frame_sz) != 0x7D0D9B93) {
-        LOG_SHORT(LOG_FATAL,"Camera module post-on self-test failed");
+    if(crc32.calc(data,frame_sz) != 0x7d0d9b93 && crc32.calc(data,frame_sz) != 0x7a0cd71f) {
+        LOG_SHORT(LOG_FATAL,"Camera module post-on self-test failed (crc was 0x%08x)",crc32.calc(data,frame_sz));
+        die(RBOD::CAMERA_ERROR);
     }
 
     // Disable the test pattern
