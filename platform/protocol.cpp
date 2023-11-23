@@ -1,6 +1,12 @@
 #include "protocol.h"
 #include <string.h>
 
+// Global serial port wrapper object
+SerialPort SP;
+
+// Begin of transmission marker
+char *packet_magic = "IOT-RADS";
+
 void send_data(byte *data,size_t sz,DType type,Cmd cmd,Channel *chan) {
     Packet packet;
 
@@ -15,14 +21,21 @@ void send_data(byte *data,size_t sz,DType type,Cmd cmd,Channel *chan) {
 }
 
 // Implement serial port packet handling
-SerialPort::SerialPort(unsigned long baud,unsigned long timeout_ms) {
+void SerialPort::initialize(unsigned long baud,unsigned long timeout_ms) {
     Serial.begin(baud);
     Serial.setTimeout(timeout_ms);
+    this->initialized = true;
 
+    // We are initialized so this is safe
     LOG_SHORT(LOG_INFO,"Initialized serial port with baud rate %ld and timeout %ld",baud,timeout_ms);
 }
 
 void SerialPort::send(Packet packet) {
+    // Do nothing if we are not initialized
+    if(!this->initialized) {
+        return; // No point in logging: the serial port is not available
+    }
+
     size_t hdr_sent_sz = Serial.write((byte *) &packet.header,sizeof(PHeader));
     size_t dat_sent_sz = Serial.write(packet.data,packet.header.size);
 
@@ -41,6 +54,11 @@ Packet SerialPort::recv() {
     // Initialize empty packet structure
     Packet packet;
     size_t rec_sz;
+
+    // Do nothing if we are not initialized
+    if(!this->initialized) {
+        return packet; // No point in logging: the serial port is not available
+    }
 
     size_t magic_length = sizeof(packet.header.magic);
     
@@ -84,4 +102,17 @@ Packet SerialPort::recv() {
             return packet;
         }
     }
+}
+
+// Can we send data to the serial port?
+bool SerialPort::is_available() {
+    if(Serial) return true; else return false;
+}
+
+// Wait until the serial port becomes available (set timeout to 0 for indefinite wait)
+// Return value is whether SP is accessible after waiting for the specified time
+bool SerialPort::blocking_wait(unsigned long timeout_ms) {
+    unsigned long limit_time = millis() + timeout_ms;
+    while(!this->is_available() && (timeout_ms == 0 || millis() <= limit_time));
+    return this->is_available();
 }

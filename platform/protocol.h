@@ -1,9 +1,6 @@
 #pragma once
 #include "common.h"
 
-// Begin of transmission marker
-char *packet_magic = "IOT-RADS";
-
 // Different kinds of data we can send
 enum DType {
     CMD,
@@ -42,19 +39,30 @@ struct Packet {
 
 // Transmission channel
 class Channel {
+    protected:
+        bool initialized = false;
     public:
         virtual void send(Packet packet) = 0;
         virtual Packet recv() = 0;
+
+        bool is_initialized() {
+            return this->initialized;
+        }
 };
 
 // Send data through some channel
-void send_data(byte *data,size_t sz,DType type,Cmd cmd,Channel *chan)
+void send_data(byte *data,size_t sz,DType type,Cmd cmd,Channel *chan);
 
 // Serial port definition
 class SerialPort : public Channel {
     public:
-        SerialPort(unsigned long baud,unsigned long timeout_ms);
+        void initialize(unsigned long baud,unsigned long timeout_ms);
         void send(Packet packet);
         Packet recv();
+        bool is_available();
+        bool blocking_wait(unsigned long timeout_ms);
 };
+
+// Make the serial port object available
+extern SerialPort SP;
 
