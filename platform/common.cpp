@@ -12,21 +12,20 @@ void die(uint8_t strobes) {
     // Switch off the power led
     digitalWrite(LED_PWR,0);
 
-    uint8_t led_state = 0;
+    int led_state = 1;
     while(strobes > 0) {
-        digitalWrite(LEDR,1-led_state);
+        digitalWrite(LEDR,led_state);
 
         // Keep track of the strobes
         count += led_state;
-        led_state ^= led_state;
-        led_state &= 0x1;
+        led_state = 1 - led_state;
 
         // Wait longer between codes
         if(count == strobes && led_state == 0) {
-            delay(500);
+            delay(2000);
             count = 0;
         } else {
-            delay(2000);
+            delay(500);
         }
     }
 
