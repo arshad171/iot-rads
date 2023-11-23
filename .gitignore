@@ -8,6 +8,10 @@ arduino/main/libraries
 # C extensions
 *.so
 
+# VS code and Arduino
+.vscode
+.output
+
 # Distribution / packaging
 .Python
 build/
