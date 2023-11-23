@@ -41,9 +41,9 @@ void setup() {
     digitalWrite(LED_PWR,1);
 
     // Do stuff
-    do_stuff();
+    initialize();
 }
 
 void loop(){
-
+    train();
 }
