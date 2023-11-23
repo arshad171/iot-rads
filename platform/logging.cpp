@@ -1,5 +1,5 @@
 #include "logging.h"
-
+#include "protocol.h"
 #include <stdarg.h>
 #include <stdlib.h>
 #include <Arduino.h>
@@ -65,8 +65,11 @@ void log(int log_level,char *file_name,int line_no,char *msg_format,...) {
         sprintf(log_buffer,log_pattern,log_lvl_names[log_level],msg_buffer);
     }
 
-    // Print the log line
-    Serial.println(log_buffer);
+    if(SP.is_available()) {
+        // Do NOT log if we don't have an available serial port or infinite recursion will occur
+        send_data((byte *) log_buffer,strlen(log_buffer)*sizeof(char),DType::LOG,Cmd::NONE,&SP);
+    }
+
     free(msg_buffer);
     free(log_buffer);
 }
