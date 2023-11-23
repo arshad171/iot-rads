@@ -35,11 +35,11 @@ void camera_init(int res,int color,int fps) {
     LOG_SHORT(LOG_DEBUG,"Camera frame acquired");
 
     // Compute the checksum
-    LOG_SHORT(LOG_DEBUG,"Computing frame CRC32...")
+    LOG_SHORT(LOG_DEBUG,"Computing frame CRC32...");
 
     Arduino_CRC32 crc32;
     if(crc32.calc(data,frame_sz) != 0x7D0D9B93) {
-        LOG_SHORT(LOG_FATAL,"Camera module post-on self-test failed")
+        LOG_SHORT(LOG_FATAL,"Camera module post-on self-test failed");
     }
 
     // Disable the test pattern
