@@ -3,7 +3,7 @@
 
 // Communication options
 #define BAUD_RATE 9600
-#define LOGL_LEVEL LOG_DEBUG
+#define LOG_LEVEL LOG_DEBUG
 
 // Camera parameters
 #define CAMERA_MODE  QVGA
