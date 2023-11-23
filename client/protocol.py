@@ -3,7 +3,7 @@ from enum import Enum
 import io,struct
 
 # Communication and encoding/decoding exceptions
-from exceptions import MalformedPacketException
+from exceptions import MalformedPacketException,SerialPortException
 from serial.serialutil import SerialException
 
 # Different kinds of data that can be exchanged

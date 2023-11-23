@@ -1,14 +1,31 @@
 from protocol import SerialPort,Packet,DataType
 from exceptions import *
+import time
 
-with SerialPort("/dev/ttyACM0",9600,1) as port:
-    while True:
-        try:
-            packet = port.read_packet()
+# How frequently to check for serial connection
+check_interval = 1
 
-            # Print logs
-            if packet is not None and packet.dtype == DataType.LOG:
-                print(packet.data.decode("ascii"))
+# Main loop of the program
+print("Connecting to serial port...")
 
-        except MalformedPacketException as e:
-            pass # Just ignore them (for now)
+uphold_connection = True
+while uphold_connection:
+    try:
+        with SerialPort("/dev/ttyACM0",9600,1) as port:
+            do_read_packets = True
+            while do_read_packets:
+                packet = None
+
+                try:
+                    packet = port.read_packet()
+                except MalformedPacketException:
+                    pass # Just ignore them
+                except SerialPortException:
+                    print("Serial port connection interrupted. Restarting...")
+                    do_read_packets = False
+
+                # Print logs
+                if packet is not None and packet.dtype == DataType.LOG:
+                    print(packet.data.decode("ascii"))
+    except SerialPortException:
+        time.sleep(check_interval)
