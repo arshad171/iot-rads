@@ -1,10 +1,5 @@
+#include "network.h"
 #include <BasicLinearAlgebra.h>
-
-// Platform code
-#include "common.h"
-
-// Network settings
-#include "settings/network.h"
 
 // NN Layers
 #include "neural_network/linear_layer.h"
