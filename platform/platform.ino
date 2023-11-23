@@ -1,18 +1,18 @@
 #include "common.h"
 #include "camera.h"
 #include "protocol.h"
+#include "network.h"
 
-// Device information (include experiment name)
-#define FW_VERSION "0.0.1-Platform-Beta"
+// Platform settings
+#include "settings/device.h"
 
-// Communication options
-#define BAUD_RATE 9600
-#define LOGL_LEVEL LOG_DEBUG
+// Neural network implementation
+#include "neural_network/linear_layer.h"
+#include "neural_network/relu_layer.h"
+#include "neural_network/squared_loss.h"
 
-// Camera parameters
-#define CAMERA_MODE  QVGA
-#define CAMERA_COLOR GRAYSCALE
-#define CAMERA_FPS   1
+// External libraries
+#include <BasicLinearAlgebra.h>
 
 void setup() {
     // Setup the board's status indicators
@@ -23,7 +23,7 @@ void setup() {
     SP.initialize(9600,100);
 
     // Setup logging
-    set_log_lvl(LOGL_LEVEL);
+    set_log_lvl(LOG_LEVEL);
     toggle_logs(true);
 
     // Wait on the serial and notify user
@@ -39,8 +39,11 @@ void setup() {
 
     // Tell the user we completed setup
     digitalWrite(LED_PWR,1);
+
+    // Do stuff
+    initialize();
 }
 
 void loop(){
-
+    train();
 }

@@ -1,16 +1,18 @@
+#include "network.h"
 #include <BasicLinearAlgebra.h>
 
+// NN Layers
 #include "neural_network/linear_layer.h"
 #include "neural_network/relu_layer.h"
 #include "neural_network/squared_loss.h"
 
 using namespace BLA;
 
-const float LEARNING_RATE = 0.0001;
-const int BATCH_SIZE = 2;
+const float learning_rate = LEARNING_RATE;
+const int batch_size = BATCH_SIZE;
 const int NUM_TRAINING_DATA = 100;
 const int NUM_EPOCHS = 10;
-const int NUM_ITERS = int(NUM_TRAINING_DATA / BATCH_SIZE);
+const int NUM_ITERS = int(NUM_TRAINING_DATA / batch_size);
 
 // m, n, N
 const int in1 = 100;
@@ -26,36 +28,36 @@ const int in4 = 10;
 const int out4 = 100;
 
 
-LinearLayer<in1, out1, BATCH_SIZE> lin1;
-ReLULayer<out1, BATCH_SIZE> rel1;
+LinearLayer<in1, out1, batch_size> lin1;
+ReLULayer<out1, batch_size> rel1;
 
-LinearLayer<in2, out2, BATCH_SIZE> lin2;
-ReLULayer<out2, BATCH_SIZE> rel2;
+LinearLayer<in2, out2, batch_size> lin2;
+ReLULayer<out2, batch_size> rel2;
 
-LinearLayer<in3, out3, BATCH_SIZE> lin3;
-ReLULayer<out3, BATCH_SIZE> rel3;
+LinearLayer<in3, out3, batch_size> lin3;
+ReLULayer<out3, batch_size> rel3;
 
-LinearLayer<in4, out4, BATCH_SIZE> lin4;
-ReLULayer<out4, BATCH_SIZE> rel4;
+LinearLayer<in4, out4, batch_size> lin4;
+ReLULayer<out4, batch_size> rel4;
 
-SquaredLoss<out4, BATCH_SIZE> sq;
+SquaredLoss<out4, batch_size> sq;
 
-BLA::Matrix<in1, BATCH_SIZE> xBatch;
+BLA::Matrix<in1, batch_size> xBatch;
 
-BLA::Matrix<out1, BATCH_SIZE> h1;
-BLA::Matrix<out2, BATCH_SIZE> h2;
-BLA::Matrix<out3, BATCH_SIZE> h3;
-BLA::Matrix<out4, BATCH_SIZE> h4;
+BLA::Matrix<out1, batch_size> h1;
+BLA::Matrix<out2, batch_size> h2;
+BLA::Matrix<out3, batch_size> h3;
+BLA::Matrix<out4, batch_size> h4;
 
-BLA::Matrix<out1, BATCH_SIZE> dLdY1;
-BLA::Matrix<out2, BATCH_SIZE> dLdY2;
-BLA::Matrix<out3, BATCH_SIZE> dLdY3;
-BLA::Matrix<out4, BATCH_SIZE> dLdY4;
+BLA::Matrix<out1, batch_size> dLdY1;
+BLA::Matrix<out2, batch_size> dLdY2;
+BLA::Matrix<out3, batch_size> dLdY3;
+BLA::Matrix<out4, batch_size> dLdY4;
 
-BLA::Matrix<in1, BATCH_SIZE> dLdX1;
-BLA::Matrix<in2, BATCH_SIZE> dLdX2;
-BLA::Matrix<in3, BATCH_SIZE> dLdX3;
-BLA::Matrix<in4, BATCH_SIZE> dLdX4;
+BLA::Matrix<in1, batch_size> dLdX1;
+BLA::Matrix<in2, batch_size> dLdX2;
+BLA::Matrix<in3, batch_size> dLdX3;
+BLA::Matrix<in4, batch_size> dLdX4;
 
 BLA::Matrix<out1, in1> dLdW1;
 BLA::Matrix<out2, in2> dLdW2;
@@ -86,7 +88,7 @@ void updateXBatch(bool trainingData) {
 do one forward and backward pass.
 returns the reconsturction error
 */
-float iterate(BLA::Matrix<in1, BATCH_SIZE> x) {
+float iterate(BLA::Matrix<in1, batch_size> x) {
   float loss;
 
   // forward
@@ -110,38 +112,34 @@ float iterate(BLA::Matrix<in1, BATCH_SIZE> x) {
   dLdY4 = rel4.backward(dLdY4);
   dLdW4 = lin4.gradWeights(dLdY4);
   dLdb4 = lin4.gradBias(dLdY4);
-  lin4.weights -= dLdW4 * LEARNING_RATE;
-  lin4.bias -= dLdb4 * LEARNING_RATE;
+  lin4.weights -= dLdW4 * learning_rate;
+  lin4.bias -= dLdb4 * learning_rate;
   dLdY3 = lin4.backward(dLdY4);
 
   dLdY3 = rel3.backward(dLdY3);
   dLdW3 = lin3.gradWeights(dLdY3);
   dLdb3 = lin3.gradBias(dLdY3);
-  lin3.weights -= dLdW3 * LEARNING_RATE;
-  lin3.bias -= dLdb3 * LEARNING_RATE;
+  lin3.weights -= dLdW3 * learning_rate;
+  lin3.bias -= dLdb3 * learning_rate;
   dLdY2 = lin3.backward(dLdY3);
 
   dLdY2 = rel2.backward(dLdY2);
   dLdW2 = lin2.gradWeights(dLdY2);
   dLdb2 = lin2.gradBias(dLdY2);
-  lin2.weights -= dLdW2 * LEARNING_RATE;
-  lin2.bias -= dLdb2 * LEARNING_RATE;
+  lin2.weights -= dLdW2 * learning_rate;
+  lin2.bias -= dLdb2 * learning_rate;
   dLdY1 = lin2.backward(dLdY2);
 
   dLdY1 = rel1.backward(dLdY1);
   dLdW1 = lin1.gradWeights(dLdY1);
   dLdb1 = lin1.gradBias(dLdY1);
-  lin1.weights -= dLdW1 * LEARNING_RATE;
-  lin1.bias -= dLdb1 * LEARNING_RATE;
+  lin1.weights -= dLdW1 * learning_rate;
+  lin1.bias -= dLdb1 * learning_rate;
 
   return loss;
 }
 
-void setup() {
-  // put your setup code here, to run once:
-  Serial.begin(9600);
-  while ( !Serial );
-
+void initialize() {
   xBatch.Fill(0.0);
 
   h1.Fill(0.0);
@@ -170,9 +168,7 @@ void setup() {
   dLdb4.Fill(0.0);
 }
 
-void loop() {
-  delay(1000);
-
+void train() {
   float loss;
   // training
   for (int epoch = 0; epoch < NUM_EPOCHS; epoch++) {
