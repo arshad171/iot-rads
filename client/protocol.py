@@ -4,6 +4,7 @@ import io,struct
 
 # Communication and encoding/decoding exceptions
 from exceptions import MalformedPacketException
+from serial.serialutil import SerialException
 
 # Different kinds of data that can be exchanged
 class DataType(Enum):
@@ -16,7 +17,7 @@ class DataType(Enum):
     def __init__(self,id,label):
         self.id = id
         self.label = label
-    
+
     @classmethod
     def by_id(cls,id: int):
         candidates = [m for m in cls if m.value[0] == id]
@@ -38,7 +39,7 @@ class Command(Enum):
     def __init__(self,id,desc):
         self.id = id
         self.desc = desc
-    
+
     @classmethod
     def by_id(cls,id: int):
         candidates = [m for m in cls if m.value[0] == id]
@@ -60,10 +61,10 @@ class Packet:
         self.data = data
         self.command = command
         self.dtype = dtype
-    
+
     def serialize(self) -> bytes:
         return struct.packet(Packet.format.format(len(self.data)),self.data)
-    
+
     def __repr__(self) -> str:
         return f"PACKET: Type <{self.dtype.label}> Command <{self.command.desc}> (Payload size 0x{len(self.data):0x})"
 
@@ -73,42 +74,58 @@ class SerialPort:
         self.port = port
         self.baud = baud
         self.timeout = timeout
-    
+        self.open = False
+
     # Handle "with" environment
     def __enter__(self):
-        self.serial = Serial(self.port,self.baud,timeout=self.timeout)
-        return self
-    
+        try:
+            self.serial = Serial(self.port,self.baud,timeout=self.timeout)
+            self.open = True
+            return self
+        except SerialException:
+            raise SerialPortException("Unable to open serial port")
+
     def __exit__(self,exc_type,exc_value,traceback):
-        self.serial.close()
+        if self.open:
+            try:
+                self.serial.close()
+                self.open = False
+            except SerialException:
+                raise SerialPortException("Unable to  close serial port")
 
     def send_packet(self,data: bytes,command: Command,dtype: DataType):
-        self.serial.write(Packet(data,command,dtype).serialize())
+        try:
+            self.serial.write(Packet(data,command,dtype).serialize())
+        except SerialException:
+            raise SerialPortException("Unable to send data through the serial port")
 
     def read_packet(self) -> Packet:
-        # Read the stream until we find a MAGIC
-        lead = self.serial.read_until(expected=Packet.magic)
+        try:
+            # Read the stream until we find a MAGIC
+            lead = self.serial.read_until(expected=Packet.magic)
 
-        # Validate that we actually got a good MAGIC
-        if len(lead) == 0:
-            return None
-        if not  lead.endswith(Packet.magic):
-            raise MalformedPacketException("Invalid MAGIC received")
+            # Validate that we actually got a good MAGIC
+            if len(lead) == 0:
+                return None
+            if not  lead.endswith(Packet.magic):
+                raise MalformedPacketException("Invalid MAGIC received")
 
-        header_format = "<III" # (uint,size_t,uint)
-        header_data = self.serial.read(struct.calcsize(header_format))
+            header_format = "<III" # (uint,size_t,uint)
+            header_data = self.serial.read(struct.calcsize(header_format))
 
-        if len(header_data) != struct.calcsize(header_format):
-            raise MalformedPacketException("Invalid header received")
-        
-        # Get the header fields
-        cmd_id,data_size,type_id = struct.unpack(header_format,header_data)
+            if len(header_data) != struct.calcsize(header_format):
+                raise MalformedPacketException("Invalid header received")
 
-        # Now we can read the data
-        payload = self.serial.read(data_size)
-        if len(payload) != data_size:
-            raise MalformedPacketException("Incomplete data stream")
-        
-        return Packet(payload,Command.by_id(cmd_id),DataType.by_id(type_id))
+            # Get the header fields
+            cmd_id,data_size,type_id = struct.unpack(header_format,header_data)
+
+            # Now we can read the data
+            payload = self.serial.read(data_size)
+            if len(payload) != data_size:
+                raise MalformedPacketException("Incomplete data stream")
+
+            return Packet(payload,Command.by_id(cmd_id),DataType.by_id(type_id))
+        except SerialException:
+            raise SerialPortException("An error occurred while trying to read data from the serial port")
 
 
