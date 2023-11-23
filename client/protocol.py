@@ -7,19 +7,47 @@ from exceptions import MalformedPacketException
 
 # Different kinds of data that can be exchanged
 class DataType(Enum):
-    CMD = 0
-    LOG = 1
-    TXT = 2
-    DAT = 3
-    IMG = 4
+    CMD = (0,"Command")
+    LOG = (1,"Log")
+    TXT = (2,"Text")
+    DAT = (3,"Binary Data")
+    IMG = (4,"Image")
+
+    def __init__(self,id,label):
+        self.id = id
+        self.label = label
+    
+    @classmethod
+    def by_id(cls,id: int):
+        candidates = [m for m in cls if m.value[0] == id]
+
+        if len(candidates) == 0:
+            raise ValueError(f"No DataType for specified ID {id}")
+        if len(candidates) > 1:
+            raise ValueError(f"Ambiguous DataType ID {id}")
+        return candidates[0]
 
 
 # Different commands associated with each packet
-class CommandType(Enum):
-    NONE = 0
-    GET_TRACK_MASK = 1
-    SET_TRACK_MASK = 2
-    REPORT_ANOMALY = 3
+class Command(Enum):
+    NONE = (0,"None")
+    GET_TRACK_MASK = (1,"Get railroad mask")
+    SET_TRACK_MASK = (2,"Set railroad mask")
+    REPORT_ANOMALY = (3,"Report Anomaly")
+
+    def __init__(self,id,desc):
+        self.id = id
+        self.desc = desc
+    
+    @classmethod
+    def by_id(cls,id: int):
+        candidates = [m for m in cls if m.value[0] == id]
+
+        if len(candidates) == 0:
+            raise ValueError(f"No Command for specified ID {id}")
+        if len(candidates) > 1:
+            raise ValueError(f"Ambiguous Command ID {id}")
+        return candidates[0]
 
 
 # Protocol packet
@@ -28,7 +56,7 @@ class Packet:
     format: str = "<8sINI{}B"
 
     # Used to build a packet that shall be sent
-    def __init__(self,data: bytes,command: CommandType,dtype: DataType):
+    def __init__(self,data: bytes,command: Command,dtype: DataType):
         self.data = data
         self.command = command
         self.dtype = dtype
@@ -37,7 +65,7 @@ class Packet:
         return struct.packet(Packet.format.format(len(self.data)),self.data)
     
     def __repr__(self) -> str:
-        return f"[PACKET] Type {self.dtype} CommandType {self.command} (Payload size 0x{len(self.data):0x})"
+        return f"PACKET: Type <{self.dtype.label}> Command <{self.command.desc}> (Payload size 0x{len(self.data):0x})"
 
 
 class SerialPort:
@@ -54,7 +82,7 @@ class SerialPort:
     def __exit__(self,exc_type,exc_value,traceback):
         self.serial.close()
 
-    def send_packet(self,data: bytes,command: CommandType,dtype: DataType):
+    def send_packet(self,data: bytes,command: Command,dtype: DataType):
         self.serial.write(Packet(data,command,dtype).serialize())
 
     def read_packet(self) -> Packet:
@@ -81,6 +109,6 @@ class SerialPort:
         if len(payload) != data_size:
             raise MalformedPacketException("Incomplete data stream")
         
-        return Packet(payload,CommandType(cmd_id),DataType(type_id))
+        return Packet(payload,Command.by_id(cmd_id),DataType.by_id(type_id))
 
 
