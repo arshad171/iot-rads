@@ -42,11 +42,14 @@ class Packet:
 
 class SerialPort:
     def __init__(self,port: str = None,baud: int = 9600,timeout: int = 1):
-        self.serial = Serial(port,baud,timeout=timeout)
+        self.port = port
+        self.baud = baud
+        self.timeout = timeout
     
     # Handle "with" environment
     def __enter__(self):
-        self.serial.open()
+        self.serial = Serial(self.port,self.baud,timeout=self.timeout)
+        return self
     
     def __exit__(self,exc_type,exc_value,traceback):
         self.serial.close()
