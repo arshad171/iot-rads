@@ -1,5 +1,6 @@
 #include "common.h"
 #include "camera.h"
+#include "protocol.h"
 
 // Device information (include experiment name)
 #define FW_VERSION "0.0.1-Platform-Beta"
@@ -19,16 +20,16 @@ void setup() {
     digitalWrite(LEDR,1); digitalWrite(LEDG,1); digitalWrite(LEDB,1); digitalWrite(LED_PWR,0);
 
     // Initialize serial port
-    Serial.begin(BAUD_RATE);
+    SP.initialize(9600,100);
 
     // Setup logging
     set_log_lvl(LOGL_LEVEL);
     toggle_logs(true);
 
     // Wait on the serial and notify user
-    digitalWrite(LEDR,0);
-    while(!Serial);
-    digitalWrite(LEDR,1);
+    digitalWrite(LEDB,0);
+    SP.blocking_wait(0);
+    digitalWrite(LEDB,1);
 
     // Greet the user and present hardware info
     LOG_SHORT(LOG_INFO,"Railway Anomaly Detection System v%s",FW_VERSION);
