@@ -2,17 +2,13 @@
 #include "camera.h"
 #include "protocol.h"
 
-// Device information (include experiment name)
-#define FW_VERSION "0.0.1-Platform-Beta"
+// Neural network implementation
+#include "neural_network/linear_layer.h"
+#include "neural_network/relu_layer.h"
+#include "neural_network/squared_loss.h"
 
-// Communication options
-#define BAUD_RATE 9600
-#define LOGL_LEVEL LOG_DEBUG
-
-// Camera parameters
-#define CAMERA_MODE  QVGA
-#define CAMERA_COLOR GRAYSCALE
-#define CAMERA_FPS   1
+// External libraries
+#include <BasicLinearAlgebra.h>
 
 void setup() {
     // Setup the board's status indicators
