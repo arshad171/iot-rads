@@ -22,8 +22,16 @@ class SquaredLoss {
   return L: the sfloat
   */
   float forward(BLA::Matrix<TinputSize, TbatchSize> Y, BLA::Matrix<TinputSize, TbatchSize> Yhat) {
-    float loss = float(BLA::Norm(Yhat - Y) / float(TinputSize * TbatchSize));
+    // float loss = float(BLA::Norm(Yhat - Y) / float(TinputSize * TbatchSize));
+    float loss;
 
+    for (int r = 0; r < TinputSize; r++) {
+      for (int c = 0; c < TbatchSize; c++) {
+        loss += ((Yhat(r, c) - Y(r, c)) * (Yhat(r, c) - Y(r, c)));
+      }
+    }
+
+    loss /= (TinputSize * TbatchSize);
     return loss;
   }
 
