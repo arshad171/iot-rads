@@ -18,8 +18,12 @@ while uphold_connection:
 
                 try:
                     packet = port.read_packet()
-                except MalformedPacketException:
-                    pass # Just ignore them
+                except MalformedPacketException as e:
+                    print(f"**** RECEIVED MALFORMED PACKET: {e}")
+                except InvalidCommandException as e:
+                    print(f"**** RECEIVED INVALID COMMAND: {e}")
+                except InvalidDataTypeException as e:
+                    print(f"**** RECEIVED DATA OF INVALID TYPE: {e}")
                 except SerialPortException:
                     print("Serial port connection interrupted. Restarting...")
                     do_read_packets = False
