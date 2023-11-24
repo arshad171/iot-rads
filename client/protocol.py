@@ -3,7 +3,7 @@ from enum import Enum
 import io,struct
 
 # Communication and encoding/decoding exceptions
-from exceptions import MalformedPacketException,SerialPortException
+from exceptions import MalformedPacketException,SerialPortException,InvalidCommandException,InvalidDataTypeException
 from serial.serialutil import SerialException
 
 # Different kinds of data that can be exchanged
@@ -23,9 +23,7 @@ class DataType(Enum):
         candidates = [m for m in cls if m.value[0] == id]
 
         if len(candidates) == 0:
-            raise ValueError(f"No DataType for specified ID {id}")
-        if len(candidates) > 1:
-            raise ValueError(f"Ambiguous DataType ID {id}")
+            raise InvalidDataTypeException(id)
         return candidates[0]
 
 
@@ -45,9 +43,7 @@ class Command(Enum):
         candidates = [m for m in cls if m.value[0] == id]
 
         if len(candidates) == 0:
-            raise ValueError(f"No Command for specified ID {id}")
-        if len(candidates) > 1:
-            raise ValueError(f"Ambiguous Command ID {id}")
+            raise InvalidCommandException(id)
         return candidates[0]
 
 
