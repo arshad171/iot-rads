@@ -2,17 +2,17 @@
 #include "common.h"
 
 // Different kinds of data we can send
-enum DType {
+enum DType : byte {
     CMD,
     LOG,
     TXT,
     DAT,
-    IMG,
+    IMG
 };
 
 // Possible commands (that is, action requests) to be sent along packets
 // RULES: All packets sent TO the arduino SHALL NOT have action "NONE"
-enum Cmd {
+enum Cmd : byte {
     // Default (no specified action)
     NONE,
 
@@ -21,7 +21,7 @@ enum Cmd {
     SET_TRACK_MASK, // Sent by the Cloud, set the track mask in memory
 
     // Anomaly detection
-    REPORT_ANOMALY, // Used by the arduino to report an anomaly. Optionally an image may be attached
+    REPORT_ANOMALY // Used by the arduino to report an anomaly. Optionally an image may be attached
 };
 
 // Transmission packet

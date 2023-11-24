@@ -179,17 +179,29 @@ void train() {
       loss += iterate(xBatch);
     }
     loss /= NUM_ITERS;
+<<<<<<< HEAD
     LOG_SHORT(LOG_INFO, "epoch: %d | loss: %f", epoch, loss);
+=======
+    LOG_SHORT(LOG_INFO,"epoch: %d loss: %f",epoch,loss);
+>>>>>>> 3c433ae (General fixups)
   }
 
 
   // testing
   updateXBatch(true);
   loss = iterate(xBatch);
+<<<<<<< HEAD
   LOG_SHORT(LOG_INFO, "train sample: %f", loss);
 
   updateXBatch(false);
   loss = iterate(xBatch);
 
   LOG_SHORT(LOG_INFO, "test sample: %f", loss);
+=======
+  LOG_SHORT(LOG_INFO,"train: %f",loss);
+
+  updateXBatch(false);
+  loss = iterate(xBatch);
+  LOG_SHORT(LOG_INFO,"test: %f",loss);
+>>>>>>> 3c433ae (General fixups)
 }
