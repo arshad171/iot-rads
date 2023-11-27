@@ -17,13 +17,13 @@ class DataGenerator:
     train_read_ptr: int = 0
     test_read_ptr: int = 0
 
-    def load_data(self):
+    def load_data(self) -> None:
         raise NotImplementedError
 
-    def get_next_train_batch(self):
+    def get_next_train_batch(self) -> np.ndarray:
         raise NotImplementedError
 
-    def get_next_test_batch(self):
+    def get_next_test_batch(self) -> np.ndarray:
         raise NotImplementedError
 
     def length(self):
@@ -35,7 +35,7 @@ class MNISTDataGenerator(DataGenerator):
         super().__init__()
         self.load_data()
 
-    def load_data(self):
+    def load_data(self) -> None:
         digits = load_digits()
 
         x_train, x_test = train_test_split(digits.data, test_size=0.1)
@@ -56,7 +56,7 @@ class MNISTDataGenerator(DataGenerator):
         self.train_data_length = x_train.shape[0]
         self.test_data_length = x_test.shape[0]
 
-    def get_next_train_batch(self):
+    def get_next_train_batch(self) -> np.ndarray:
         if self.train_read_ptr >= self.train_data_length:
             self.train_read_ptr = 0
 
@@ -66,7 +66,7 @@ class MNISTDataGenerator(DataGenerator):
 
         return batch
 
-    def get_next_test_batch(self):
+    def get_next_test_batch(self) -> np.ndarray:
         if self.test_read_ptr >= self.test_data_length:
             self.test_read_ptr = 0
 
