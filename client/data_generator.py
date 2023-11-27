@@ -60,6 +60,7 @@ class MNISTDataGenerator(DataGenerator):
         x_train = (x_train - min_vals) / (max_vals - min_vals)
         x_test = (x_test - min_vals) / (max_vals - min_vals)
 
+        # drop the last batch
         x_train = x_train[: math.floor(x_train.shape[0] // BATCH_SIZE) * BATCH_SIZE]
         x_test = x_test[: math.floor(x_test.shape[0] // BATCH_SIZE) * BATCH_SIZE]
 
