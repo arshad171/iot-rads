@@ -3,10 +3,12 @@ import numpy as np
 from sklearn.datasets import load_digits
 from sklearn.model_selection import train_test_split
 
+from abc import ABC, abstractmethod
+
 BATCH_SIZE = 2
 
 
-class DataGenerator:
+class DataGenerator(ABC):
     # hold train and test data
     train_data: np.ndarray = None
     test_data: np.ndarray = None
@@ -17,15 +19,18 @@ class DataGenerator:
     train_read_ptr: int = 0
     test_read_ptr: int = 0
 
+    @abstractmethod
     def load_data(self) -> None:
         raise NotImplementedError
 
+    @abstractmethod
     def get_next_train_batch(self) -> np.ndarray:
         """
         returns a numpy ndarray of shape (batch_size, num_feats)
         """
         raise NotImplementedError
 
+    @abstractmethod
     def get_next_test_batch(self) -> np.ndarray:
         """
         returns a numpy ndarray of shape (batch_size, num_feats)
@@ -55,8 +60,8 @@ class MNISTDataGenerator(DataGenerator):
         x_train = (x_train - min_vals) / (max_vals - min_vals)
         x_test = (x_test - min_vals) / (max_vals - min_vals)
 
-        x_train = x_train[:math.floor(x_train.shape[0] // BATCH_SIZE) * BATCH_SIZE]
-        x_test = x_test[:math.floor(x_test.shape[0] // BATCH_SIZE) * BATCH_SIZE]
+        x_train = x_train[: math.floor(x_train.shape[0] // BATCH_SIZE) * BATCH_SIZE]
+        x_test = x_test[: math.floor(x_test.shape[0] // BATCH_SIZE) * BATCH_SIZE]
 
         # the data is already flat (-1, 64)
         self.train_data = x_train
