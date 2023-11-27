@@ -21,12 +21,21 @@ class DataGenerator:
         raise NotImplementedError
 
     def get_next_train_batch(self) -> np.ndarray:
+        """
+        returns a numpy ndarray of shape (batch_size, num_feats)
+        """
         raise NotImplementedError
 
     def get_next_test_batch(self) -> np.ndarray:
+        """
+        returns a numpy ndarray of shape (batch_size, num_feats)
+        """
         raise NotImplementedError
 
     def length(self):
+        """
+        returns a tuple of train and test data lengths
+        """
         return (self.train_data_length, self.test_data_length)
 
 
