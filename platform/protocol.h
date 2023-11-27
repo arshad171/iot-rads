@@ -26,7 +26,7 @@ enum Cmd {
 
 // Transmission packet
 struct PHeader {
-    char magic[8];
+    char magic[8] = { 0 };
     Cmd command;
     size_t size;
     DType type;

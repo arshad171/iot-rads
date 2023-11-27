@@ -8,16 +8,18 @@ SerialPort SP;
 char *packet_magic = "IOT-RADS";
 
 void send_data(byte *data,size_t sz,DType type,Cmd cmd,Channel *chan) {
-    Packet packet;
+    Packet *packet = new Packet();
 
-    strcpy(packet.header.magic,packet_magic);
-    packet.header.command = cmd;
-    packet.header.size = sz;
-    packet.header.type = type;
-    packet.data = data;
+    strcpy(packet->header.magic,packet_magic);
+    packet->header.command = cmd;
+    packet->header.size = sz;
+    packet->header.type = type;
+    packet->data = data;
 
     // Send over the channel
-    chan->send(packet);
+    chan->send(*packet);
+
+    delete packet;
 }
 
 // Implement serial port packet handling

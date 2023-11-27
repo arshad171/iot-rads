@@ -1,3 +1,4 @@
+#include "logging.h"
 #include "network.h"
 #include <BasicLinearAlgebra.h>
 
@@ -178,17 +179,17 @@ void train() {
       loss += iterate(xBatch);
     }
     loss /= NUM_ITERS;
-    Serial.print("epoch: "); Serial.print(epoch); Serial.print(" loss: "); Serial.print(loss); Serial.println();
+    LOG_SHORT(LOG_INFO, "epoch: %d | loss: %f", epoch, loss);
   }
 
 
   // testing
   updateXBatch(true);
   loss = iterate(xBatch);
-  Serial.print("train: "); Serial.print(loss); Serial.println();
+  LOG_SHORT(LOG_INFO, "train sample: %f", loss);
 
   updateXBatch(false);
   loss = iterate(xBatch);
 
-  Serial.print("test: "); Serial.print(loss); Serial.println();
+  LOG_SHORT(LOG_INFO, "test sample: %f", loss);
 }
