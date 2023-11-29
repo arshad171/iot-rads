@@ -4,6 +4,8 @@ __pycache__/
 *$py.class
 arduino/main/libraries
 .DS_Store
+cam_test/
+images*
 
 # C extensions
 *.so
