@@ -6,6 +6,7 @@ from PIL import Image
 import serial
 
 NUM_IMAGES = 10
+DELAY = 2
 DATA_FOLDER = "images"
 
 PORT = "/dev/cu.usbmodem21401"
@@ -71,7 +72,7 @@ def main():
 
             image.save(os.path.join(DATA_FOLDER, f"image-{counter}.jpg"))
 
-            time.sleep(5)
+            time.sleep(DELAY)
 
 
 if __name__ == "__main__":
