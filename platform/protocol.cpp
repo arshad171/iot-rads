@@ -10,7 +10,7 @@ char *packet_magic = "IOT-RADS";
 void send_data(byte *data,size_t sz,DType type,Cmd cmd,Channel *chan) {
     Packet *packet = new Packet();
 
-    strcpy(packet->header.magic,packet_magic);
+    strncpy(packet->header.magic,packet_magic,8);
     packet->header.command = cmd;
     packet->header.size = sz;
     packet->header.type = type;
