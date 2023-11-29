@@ -34,9 +34,6 @@ void setup() {
     // Greet the user and present hardware info
     LOG_SHORT(LOG_INFO,"Railway Anomaly Detection System v%s",FW_VERSION);
 
-    // Initialize more hardware
-    camera_init(CAMERA_MODE,CAMERA_COLOR,CAMERA_FPS);
-
     // Tell the user we completed setup
     digitalWrite(LED_PWR,1);
 
