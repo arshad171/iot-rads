@@ -6,6 +6,7 @@ arduino/main/libraries
 .DS_Store
 cam_test/
 images*
+*videos*
 
 # C extensions
 *.so

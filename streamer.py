@@ -6,7 +6,7 @@ from subprocess import Popen, TimeoutExpired
 STREAM_URL = "https://www.youtube.com/watch?v=BahXDYWQAKk"
 
 NUM_VIDEOS = 1000
-DURATION = 1
+DURATION = 2
 # secs
 DELAY = 60 * 5
 
