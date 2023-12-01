@@ -1,42 +1,52 @@
 #include <ArduinoBLE.h>
 
-BLEService myService("fff0");
-BLEIntCharacteristic myCharacteristic("fff1", BLERead | BLEBroadcast);
+byte sendBuffer[100] = {0};
 
-// Advertising parameters should have a global scope. Do NOT define them in 'setup' or in 'loop'
-const uint8_t completeRawAdvertisingData[] = {0x02,0x01,0x06,0x09,0xff,0x01,0x01,0x00,0x01,0x02,0x03,0x04,0x05};   
+BLEService service1("19B10000-E8F2-537E-4F6C-D104768A1214"); // Bluetooth® Low Energy LED Service
 
-void setup() {
-  Serial.begin(9600);
-  while (!Serial);
+// BLEByteCharacteristic characteristic1("19B10001-E8F2-537E-4F6C-D104768A1214", BLERead | BLEWrite);
+BLECharacteristic characteristic1("19B10001-E8F2-537E-4F6C-D104768A1214", BLERead | BLEWrite, sizeof(sendBuffer));
 
-  if (!BLE.begin()) {
-    Serial.println("failed to initialize BLE!");
-    while (1);
-  }
+// float sendBuffer = 1.0;
 
-  myService.addCharacteristic(myCharacteristic);
-  BLE.addService(myService);
+void setup()
+{
+    Serial.begin(9600);
+    while (!Serial)
+        ;
 
-  // Build advertising data packet
-  BLEAdvertisingData advData;
-  // If a packet has a raw data parameter, then all the other parameters of the packet will be ignored
-  advData.setRawData(completeRawAdvertisingData, sizeof(completeRawAdvertisingData));  
-  // Copy set parameters in the actual advertising packet
-  BLE.setAdvertisingData(advData);
+    // begin initialization
+    if (!BLE.begin())
+    {
+        Serial.println("starting Bluetooth® Low Energy module failed!");
 
-  // Build scan response data packet
-  BLEAdvertisingData scanData;
-  scanData.setLocalName("Sender_2");
-  // Copy set parameters in the actual scan response packet
-  BLE.setScanResponseData(scanData);
-  
-  BLE.advertise();
-  BLE.setAdvertisingInterval(100);
+        while (1)
+            ;
+    }
 
-  Serial.println("advertising ...");
+    // set advertised local name and service UUID:
+    BLE.setLocalName("sender");
+    BLE.setAdvertisedService(service1);
+
+    // add the characteristic to the service
+    service1.addCharacteristic(characteristic1);
+
+    // add service
+    BLE.addService(service1);
+
+    // set the initial value for the characeristic:
+    // characteristic1.writeValue(0);
+    // characteristic1.writeValue(*(byte *) sendBuffer);
+    characteristic1.writeValue(sendBuffer, sizeof(sendBuffer));
+
+    // start advertising
+    BLE.advertise();
+
+    Serial.println("i am the sender...");
 }
 
-void loop() {
-  BLE.poll();
+void loop()
+{
+    Serial.println("in the loop");
+    delay(1000);
 }
