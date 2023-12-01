@@ -92,31 +92,32 @@ void controlLed(BLEDevice peripheral)
 
     while (peripheral.connected())
     {
+        ledCharacteristic.writeValue((byte)0x01);
         // while the peripheral is connected
 
         // read the button pin
-        int buttonState = digitalRead(buttonPin);
+        // int buttonState = digitalRead(buttonPin);
 
-        if (oldButtonState != buttonState)
-        {
-            // button changed
-            oldButtonState = buttonState;
+        // if (oldButtonState != buttonState)
+        // {
+        //     // button changed
+        //     oldButtonState = buttonState;
 
-            if (buttonState)
-            {
-                Serial.println("button pressed");
+        //     if (buttonState)
+        //     {
+        //         Serial.println("button pressed");
 
-                // button is pressed, write 0x01 to turn the LED on
-                ledCharacteristic.writeValue((byte)0x01);
-            }
-            else
-            {
-                Serial.println("button released");
+        //         // button is pressed, write 0x01 to turn the LED on
+        //         ledCharacteristic.writeValue((byte)0x01);
+        //     }
+        //     else
+        //     {
+        //         Serial.println("button released");
 
-                // button is released, write 0x00 to turn the LED off
-                ledCharacteristic.writeValue((byte)0x00);
-            }
-        }
+        //         // button is released, write 0x00 to turn the LED off
+        //         ledCharacteristic.writeValue((byte)0x00);
+        //     }
+        // }
     }
 
     Serial.println("Peripheral disconnected");
