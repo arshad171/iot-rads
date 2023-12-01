@@ -4,8 +4,8 @@ byte sendBuffer[100] = {0};
 
 BLEService service1("19B10000-E8F2-537E-4F6C-D104768A1214"); // Bluetooth® Low Energy LED Service
 
-// BLEByteCharacteristic characteristic1("19B10001-E8F2-537E-4F6C-D104768A1214", BLERead | BLEWrite);
-BLECharacteristic characteristic1("19B10001-E8F2-537E-4F6C-D104768A1214", BLERead | BLEWrite, sizeof(sendBuffer));
+BLEByteCharacteristic characteristic1("19B10001-E8F2-537E-4F6C-D104768A1214", BLERead | BLEWrite);
+// BLECharacteristic characteristic1("19B10001-E8F2-537E-4F6C-D104768A1214", BLERead | BLEWrite, sizeof(sendBuffer));
 
 // float sendBuffer = 1.0;
 
@@ -35,9 +35,9 @@ void setup()
     BLE.addService(service1);
 
     // set the initial value for the characeristic:
-    // characteristic1.writeValue(0);
+    characteristic1.writeValue(10);
     // characteristic1.writeValue(*(byte *) sendBuffer);
-    characteristic1.writeValue(sendBuffer, sizeof(sendBuffer));
+    // characteristic1.writeValue(sendBuffer, sizeof(sendBuffer));
 
     // start advertising
     BLE.advertise();
@@ -49,4 +49,5 @@ void loop()
 {
     Serial.println("in the loop");
     delay(1000);
+    characteristic1.writeValue(10);
 }
