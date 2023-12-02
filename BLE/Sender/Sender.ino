@@ -1,13 +1,13 @@
 #include <ArduinoBLE.h>
 
-byte sendBuffer[100] = {0};
+byte buffer = 0x0A;
+// byte buffer[100] = {0};
 
 BLEService service1("19B10000-E8F2-537E-4F6C-D104768A1214"); // Bluetooth® Low Energy LED Service
 
-BLEByteCharacteristic characteristic1("19B10001-E8F2-537E-4F6C-D104768A1214", BLERead | BLEWrite);
+// BLEByteCharacteristic characteristic1("weights", BLERead | BLEWrite | BLEBroadcast | BLENotify);
+BLEByteCharacteristic characteristic1("2A37", BLERead | BLEWrite | BLEBroadcast | BLENotify);
 // BLECharacteristic characteristic1("19B10001-E8F2-537E-4F6C-D104768A1214", BLERead | BLEWrite, sizeof(sendBuffer));
-
-// float sendBuffer = 1.0;
 
 void setup()
 {
@@ -35,9 +35,7 @@ void setup()
     BLE.addService(service1);
 
     // set the initial value for the characeristic:
-    characteristic1.writeValue(10);
-    // characteristic1.writeValue(*(byte *) sendBuffer);
-    // characteristic1.writeValue(sendBuffer, sizeof(sendBuffer));
+    characteristic1.writeValue(buffer);
 
     // start advertising
     BLE.advertise();
@@ -47,7 +45,14 @@ void setup()
 
 void loop()
 {
-    Serial.println("in the loop");
-    delay(1000);
-    characteristic1.writeValue(10);
+    BLEDevice central = BLE.central();
+
+    if (central) {
+      while(central.connect()) {
+        Serial.println("sending data");
+        characteristic1.writeValue(buffer);
+        // delay(1000);
+      }
+    }
+
 }
