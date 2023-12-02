@@ -1,13 +1,16 @@
 #include <ArduinoBLE.h>
 
-byte buffer = 0x0A;
-// byte buffer[100] = {0};
+// byte buffer = 0x0A;
+const int BUFFER_SIZE = 5;
+const int SIZE_IN_BYTES = BUFFER_SIZE * sizeof(byte);
+byte buffer[BUFFER_SIZE] = {1, 2, 3, 4, 5};
 
 BLEService service1("19B10000-E8F2-537E-4F6C-D104768A1214"); // Bluetooth® Low Energy LED Service
 
 // BLEByteCharacteristic characteristic1("weights", BLERead | BLEWrite | BLEBroadcast | BLENotify);
-BLEByteCharacteristic characteristic1("2A37", BLERead | BLEWrite | BLEBroadcast | BLENotify);
-// BLECharacteristic characteristic1("19B10001-E8F2-537E-4F6C-D104768A1214", BLERead | BLEWrite, sizeof(sendBuffer));
+// BLEByteCharacteristic characteristic1("2A37", BLERead | BLEWrite | BLEBroadcast | BLENotify);
+BLECharacteristic characteristic1("2A37", BLERead | BLEWrite | BLEBroadcast | BLENotify, SIZE_IN_BYTES);
+
 
 void setup()
 {
@@ -35,7 +38,8 @@ void setup()
     BLE.addService(service1);
 
     // set the initial value for the characeristic:
-    characteristic1.writeValue(buffer);
+    // characteristic1.writeValue(buffer);
+    characteristic1.writeValue(buffer, SIZE_IN_BYTES);
 
     // start advertising
     BLE.advertise();
@@ -50,8 +54,9 @@ void loop()
     if (central) {
       while(central.connect()) {
         Serial.println("sending data");
-        characteristic1.writeValue(buffer);
-        // delay(1000);
+        // characteristic1.writeValue(buffer);
+        characteristic1.writeValue(buffer, SIZE_IN_BYTES);
+        delay(1000);
       }
     }
 
