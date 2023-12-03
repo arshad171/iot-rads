@@ -5,7 +5,7 @@ __pycache__/
 arduino/main/libraries
 .DS_Store
 cam_test/
-images*
+*images*
 *videos*
 
 # C extensions
