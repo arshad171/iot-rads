@@ -5,14 +5,14 @@ from subprocess import Popen, TimeoutExpired
 
 STREAM_URL = "https://www.youtube.com/watch?v=BahXDYWQAKk"
 
-NUM_VIDEOS = 1000
-DURATION = 2
+NUM_VIDEOS = 500
+DURATION = 5
 # secs
-DELAY = 60 * 5
+DELAY = 60 * 10
 
 RESOLUTION = "240p"
 
-OUTPUT_FOLDER = "open_data-videos"
+OUTPUT_FOLDER = "open-videos"
 
 def main():
     output_folder = Path(OUTPUT_FOLDER)
