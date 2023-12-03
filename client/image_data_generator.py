@@ -29,13 +29,8 @@ class ImageDataGenerator:
 
     def __getitem__(self, idx):
         image = cv2.imread(os.path.join(self.path, self.images[idx]))
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        image = cv2.resize(image, dsize=self.image_size)
 
-        image = tf.expand_dims(image, axis=0)
-        image = tf.cast(image, dtype=tf.float32)
-        image /= 255
-        image *= self.mask
+        image = self.transform(image)
 
         image_embedding = tf.squeeze(self.embedding_layer(image))
 
@@ -44,3 +39,25 @@ class ImageDataGenerator:
     def __call__(self, *args: Any, **kwds: Any) -> Any:
         for idx in range(self.__len__()):
             yield self.__getitem__(idx)
+
+    def get_image(self, idx, apply_mask=False):
+        image = cv2.imread(os.path.join(self.path, self.images[idx]))
+
+        image = tf.squeeze(self.transform(image, apply_mask=apply_mask))
+
+        return image
+
+    def transform(self, image, apply_mask=True):
+        transformed_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        transformed_image = cv2.resize(transformed_image, dsize=self.image_size)
+
+        transformed_image = tf.expand_dims(transformed_image, axis=0)
+        transformed_image = tf.cast(transformed_image, dtype=tf.float32)
+        transformed_image /= 255
+
+        if apply_mask:
+            transformed_image *= self.mask
+
+        return transformed_image
+
+        
