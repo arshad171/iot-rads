@@ -30,7 +30,7 @@ class ImageDataGenerator:
     def __getitem__(self, idx):
         image = cv2.imread(os.path.join(self.path, self.images[idx]))
 
-        image = self.transform(image)
+        image = self.transform(image, apply_mask=True)
 
         image_embedding = tf.squeeze(self.embedding_layer(image))
 
