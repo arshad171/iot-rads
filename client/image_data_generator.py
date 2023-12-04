@@ -29,7 +29,7 @@ class ImageDataGenerator:
                     trainable=False,
                 ),
                 tf.keras.layers.Lambda(lambda x: tf.expand_dims(x, axis=2)),
-                tf.keras.layers.AveragePooling1D(pool_size=8, padding="valid", strides=8)
+                tf.keras.layers.AveragePooling1D(pool_size=8, padding="valid")
             ]
         )
 
