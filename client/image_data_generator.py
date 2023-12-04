@@ -15,9 +15,22 @@ class ImageDataGenerator:
         mask = loadmat(mask_path)
         self.mask = mask["mask"]
 
-        self.embedding_layer = hub.KerasLayer(
-            "https://www.kaggle.com/models/google/mobilenet-v3/frameworks/TensorFlow2/variations/small-075-224-feature-vector/versions/1",
-            trainable=False,
+        # self.embedding_layer = hub.KerasLayer(
+        #     "https://www.kaggle.com/models/google/mobilenet-v3/frameworks/TensorFlow2/variations/small-075-224-feature-vector/versions/1",
+        #     trainable=False,
+        # )
+        self.embedding_layer = tf.keras.Sequential(
+            [
+                tf.keras.layers.InputLayer(
+                    input_shape=([image_size[0], image_size[1], 3])
+                ),
+                hub.KerasLayer(
+                    "https://www.kaggle.com/models/google/mobilenet-v3/frameworks/TensorFlow2/variations/small-075-224-feature-vector/versions/1",
+                    trainable=False,
+                ),
+                tf.keras.layers.Lambda(lambda x: tf.expand_dims(x, axis=2)),
+                tf.keras.layers.AveragePooling1D(pool_size=8, padding="valid", strides=8)
+            ]
         )
 
         images = os.listdir(self.path)
@@ -59,5 +72,3 @@ class ImageDataGenerator:
             transformed_image *= self.mask
 
         return transformed_image
-
-        
