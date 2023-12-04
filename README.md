@@ -16,6 +16,10 @@ Note: **For each of the scipts above make sure to checkout the config variables 
 
 ## Real Data
 
+1.  Gathering the data, run the Arduino sketch [dump_data.ino](./dump_data/dump_data.ino) and the python script [dump_open_data.py](./dump_data/dump_open_data.py) to save the dump.
+
+1. Generating mask, run the [test_resize.ipynb](./test_resize.ipynb) to dump the resized image (suitable for the embeddng model). The mask (ROI) can then be manually generated using MATLAB segmenter and export the binary mask with the variable name `mask` and the filename `mask.mat`. Make sure to normalize the binary mask before exporting, i.e. divide it by 255.0.
+
 1. The data and masks are under [train](./images-data1/), [test](./images-data1-test/) and [mask](./images-data1-mask/).
 
 2. Run the [notebook](./test_anomaly_detection.ipynb).
