@@ -13,3 +13,9 @@ The POC is run on opensource dataset. Here are the steps:
 4. The [interactive notebook](./test_anomaly_detection.ipynb) trains the autoencoder and vizualizes the results on sample images.
 
 Note: **For each of the scipts above make sure to checkout the config variables defined at the top of the scripts. These can be used to change the source/dest paths and other parameters**
+
+## Real Data
+
+1. The data and masks are under [train](./images-data1/), [test](./images-data1-test/) and [mask](./images-data1-mask/).
+
+2. Run the [notebook](./test_anomaly_detection.ipynb).
