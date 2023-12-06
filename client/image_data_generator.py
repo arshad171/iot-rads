@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from typing import Any
+from PIL import Image
 import numpy as np
 from scipy.io import loadmat
 import cv2
@@ -47,8 +48,18 @@ class ImageDataGenerator:
     def __len__(self):
         return self.length
 
+    def read_image(self, path):
+        # use PIL, cv2 reader throws redundant warnings
+        image = Image.open(path)
+        image = image.convert("RGB")
+        image = np.array(image)
+
+        return image
+
     def __getitem__(self, idx):
-        image = cv2.imread(os.path.join(self.path, self.images[idx]))
+        image = self.read_image(os.path.join(self.path, self.images[idx]))
+
+        # image = cv2.imread(os.path.join(self.path, self.images[idx]))
 
         image = self.transform(image, apply_mask=True)
 
@@ -62,7 +73,7 @@ class ImageDataGenerator:
             yield self.__getitem__(idx)
 
     def get_image(self, idx, apply_mask=False):
-        image = cv2.imread(os.path.join(self.path, self.images[idx]))
+        image = self.read_image(os.path.join(self.path, self.images[idx]))
 
         image = tf.squeeze(self.transform(image, apply_mask=apply_mask))
 
@@ -103,7 +114,7 @@ class ImageDataGenerator:
         return (point[0], point[1])
 
     def get_mask(self, image):
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 
         # Apply edge detection (you may need to adjust parameters for your specific image)
         edges = cv2.Canny(gray, 50, 150, apertureSize=3)
@@ -137,19 +148,24 @@ class ImageDataGenerator:
         # create a mask
         mask = np.zeros_like(image)
 
+        # mask out the right wall in the images by computing the intersection points
+
         # line1_m = -np.cos(horz_lines[min_horz][1]) / np.sin(horz_lines[min_horz][1])
         # line1_c = horz_lines[min_horz][0] / np.sin(horz_lines[min_horz][1])
 
         # line2_m = -np.cos(horz_lines[max_horz][1]) / np.sin(horz_lines[max_horz][1])
         # line2_c = horz_lines[max_horz][0] / np.sin(horz_lines[max_horz][1])
 
-        # if len(vert_lines) > 0:
+        # if vert_lines.size > 0:
         #     line3_m = -np.cos(vert_lines[0][1]) / np.sin(vert_lines[0][1])
         #     line3_c = vert_lines[0][0] / np.sin(vert_lines[0][1])
 
         #     i1 = self.find_intersection(line1_m, line3_m, line1_c, line3_c)
         #     i2 = self.find_intersection(line2_m, line3_m, line2_c, line3_c)
-        #     poly_points = np.array([line1[0], i1, i2, line2[0]], dtype=np.int32)
+        #     if any(np.isnan(i1)) or any(np.isnan(i2)):
+        #         poly_points = np.array([line1[0], line1[1], line2[1], line2[0]], dtype=np.int32)
+        #     else:
+        #         poly_points = np.array([line1[0], i1, i2, line2[0]], dtype=np.int32)
         # else:
         #     poly_points = np.array([line1[0], line1[1], line2[1], line2[0]], dtype=np.int32)
 
@@ -164,12 +180,15 @@ class ImageDataGenerator:
         return np.squeeze(mask)
 
     def transform(self, image, apply_mask=True):
-        transformed_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        transformed_image = cv2.resize(transformed_image, dsize=self.image_size)
+        transformed_image = image
 
-        transformed_image = tf.expand_dims(transformed_image, axis=0)
-        transformed_image = tf.cast(transformed_image, dtype=tf.float32)
-        transformed_image /= 255
+        # blur the image excluding the mask
+
+        # blur_image = cv2.blur(transformed_image, ksize=(25, 25))
+        # blur_image = cv2.resize(blur_image, dsize=self.image_size)
+
+        transformed_image = cv2.resize(transformed_image, dsize=self.image_size)
+        transformed_image = np.array(transformed_image, dtype=np.float32)
 
         if apply_mask:
             if self.use_dynamic_mask:
@@ -178,5 +197,13 @@ class ImageDataGenerator:
                 mask = self.mask
 
             transformed_image *= mask
+
+            # blur the image excluding the mask
+
+            # transformed_image = (mask * transformed_image) + ((1 - mask) * blur_image)
+
+        transformed_image = tf.expand_dims(transformed_image, axis=0)
+        transformed_image = tf.cast(transformed_image, dtype=tf.float32)
+        transformed_image /= 255
 
         return transformed_image
