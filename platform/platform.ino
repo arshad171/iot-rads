@@ -20,7 +20,7 @@ void setup() {
     digitalWrite(LEDR,1); digitalWrite(LEDG,1); digitalWrite(LEDB,1); digitalWrite(LED_PWR,0);
 
     // Initialize serial port
-    SP.initialize(9600,100);
+    SP.initialize(BAUD_RATE,1000);
 
     // Setup logging
     set_log_lvl(LOG_LEVEL);

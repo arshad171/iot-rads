@@ -10,11 +10,19 @@ char *packet_magic = "IOT-RADS";
 void send_data(byte *data,size_t sz,DType type,Cmd cmd,Channel *chan) {
     Packet *packet = new Packet();
 
+<<<<<<< HEAD
     strcpy(packet->header.magic,packet_magic);
     packet->header.command = cmd;
     packet->header.size = sz;
     packet->header.type = type;
     packet->data = data;
+=======
+    strncpy(packet.header.magic,packet_magic,8);
+    packet.header.command = cmd;
+    packet.header.size = sz;
+    packet.header.type = type;
+    packet.data = data;
+>>>>>>> 84ef2c6 (More rigorous serial port initialization on both sides)
 
     // Send over the channel
     chan->send(*packet);
@@ -24,7 +32,7 @@ void send_data(byte *data,size_t sz,DType type,Cmd cmd,Channel *chan) {
 
 // Implement serial port packet handling
 void SerialPort::initialize(unsigned long baud,unsigned long timeout_ms) {
-    Serial.begin(baud);
+    Serial.begin(baud,SERIAL_8N1);
     Serial.setTimeout(timeout_ms);
     this->initialized = true;
 
@@ -38,10 +46,12 @@ void SerialPort::send(Packet packet) {
         return; // No point in logging: the serial port is not available
     }
 
+    // Serial.print("\n");Serial.print(packet.header.command);Serial.print(packet.header.type);Serial.println(e);
     size_t hdr_sent_sz = Serial.write((byte *) &packet.header,sizeof(PHeader));
     size_t dat_sent_sz = Serial.write(packet.data,packet.header.size);
+    // Serial.print("\n");Serial.print(packet.header.command);Serial.print(packet.header.type);Serial.println(e);
 
-    if(hdr_sent_sz != sizeof(PHeader)) {
+     if(hdr_sent_sz != sizeof(PHeader)) {
         LOG(LOG_ERROR,"Error sending header (sent %ld/%ld)",hdr_sent_sz,sizeof(PHeader));
     }
 

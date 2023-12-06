@@ -2,7 +2,7 @@
 #define FW_VERSION "0.0.1-Platform-Beta"
 
 // Communication options
-#define BAUD_RATE 9600
+#define BAUD_RATE 19200
 #define LOG_LEVEL LOG_DEBUG
 
 // Camera parameters

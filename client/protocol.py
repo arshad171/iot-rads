@@ -1,4 +1,4 @@
-from serial import Serial
+from serial import Serial,PARITY_NONE,STOPBITS_ONE,EIGHTBITS
 from enum import Enum
 import io,struct
 
@@ -75,7 +75,7 @@ class SerialPort:
     # Handle "with" environment
     def __enter__(self):
         try:
-            self.serial = Serial(self.port,self.baud,timeout=self.timeout)
+            self.serial = Serial(self.port,self.baud,timeout=self.timeout,parity=PARITY_NONE,bytesize=EIGHTBITS,stopbits=STOPBITS_ONE)
             self.open = True
             return self
         except SerialException:

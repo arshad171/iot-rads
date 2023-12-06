@@ -11,7 +11,7 @@ print("Connecting to serial port...")
 uphold_connection = True
 while uphold_connection:
     try:
-        with SerialPort("/dev/ttyACM0",9600,1) as port:
+        with SerialPort("/dev/ttyACM0",19200,1) as port:
             do_read_packets = True
             while do_read_packets:
                 packet = None
