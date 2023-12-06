@@ -18,15 +18,24 @@ class LinearLayer(BaseLayer):
     # n x 1
     bias: np.ndarray = None
 
+    m_dLdW: np.ndarray = None
+    m_dLdb: np.ndarray = None
+
+    momentum: float = 0.0
+
     def __init__(
         self, input_size: int, output_size: int, name: str = "linear_layer"
     ) -> None:
         # initialize weights: Xavier normal
         std = np.sqrt(2 / (input_size + output_size))
-        self.weights = np.random.normal(
-            loc=0.0, scale=std, size=(output_size, input_size)
-        )
-        self.bias = np.ones(shape=(output_size, 1))
+        # self.weights = np.random.normal(
+        #     loc=0.0, scale=std, size=(output_size, input_size)
+        # )
+        self.weights = np.random.uniform(low=-1.0, high=1.0, size=(output_size, input_size))
+        self.bias = np.zeros(shape=(output_size, 1))
+
+        self.m_dLdW = np.zeros_like(self.weights)
+        self.m_dLdb = np.zeros_like(self.bias)
 
         self.input_size = input_size
         self.output_size = output_size
@@ -83,6 +92,14 @@ class LinearLayer(BaseLayer):
 
         dLdb = np.sum(dLdY, axis=1)
         dLdb = np.reshape(dLdb, newshape=(-1, 1))
+
+        # momentum
+        dLdW = self.momentum * self.m_dLdW + (1 - self.momentum) * dLdW
+        dLdb = self.momentum * self.m_dLdb + (1 - self.momentum) * dLdb
+
+        # update
+        self.m_dLdW = dLdW
+        self.m_dLdb = dLdb
 
         assert (
             dLdW.shape[0] == self.output_size and dLdW.shape[1] == self.input_size
