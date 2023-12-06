@@ -1,9 +1,15 @@
-from protocol import SerialPort,Packet,DataType
-from exceptions import *
 import time
+from protocol import SerialPort, DataType
+
+from exceptions import (
+    MalformedPacketException,
+    InvalidCommandException,
+    InvalidDataTypeException,
+    SerialPortException
+)
 
 # How frequently to check for serial connection
-check_interval = 1
+CHECK_INTERVAL = 1
 
 # Main loop of the program
 print("Connecting to serial port...")
@@ -11,7 +17,7 @@ print("Connecting to serial port...")
 uphold_connection = True
 while uphold_connection:
     try:
-        with SerialPort("/dev/ttyACM0",19200,1) as port:
+        with SerialPort("/dev/ttyACM0", 19200, 1) as port:
             do_read_packets = True
             while do_read_packets:
                 packet = None
@@ -32,4 +38,4 @@ while uphold_connection:
                 if packet is not None and packet.dtype == DataType.LOG:
                     print(packet.data.decode("ascii"))
     except SerialPortException:
-        time.sleep(check_interval)
+        time.sleep(CHECK_INTERVAL)
