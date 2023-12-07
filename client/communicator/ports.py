@@ -18,11 +18,11 @@ from exceptions import (
 
 class SerialPort(Thread):
     """ Implements a serial port (together with the RADS protocol) """
-    def __init__(self, port: str, baud: int, retry: float):
+    def __init__(self, port: str, baud: int, interval: float):
         # Store serial port parameters
         self.__port = port
         self.__baud = baud
-        self.__retry = retry
+        self.__interval = interval
 
         # The two queues act like letterboxes
         self.inbox = SimpleQueue()
@@ -41,13 +41,13 @@ class SerialPort(Thread):
 
     def __open_serial(self):
         print("******** Opening Serial Port")
-        while not self.__serial.is_open():
+        while not self.__serial.is_open:
             try:
-                self.__serial = Serial(self.__port,self.__baud,timeout=0.1,parity=PARITY_NONE,
-                                       bytesize=EIGHTBITS,stopbits=STOPBITS_ONE)
+                self.__serial = Serial(self.__port,self.__baud,timeout=self.__interval,
+                                       parity=PARITY_NONE,bytesize=EIGHTBITS,stopbits=STOPBITS_ONE)
                 continue
             except SerialException:
-                time.sleep(self.__retry)
+                time.sleep(self.__interval)
 
     def __close_serial(self):
         try:
@@ -75,7 +75,7 @@ class SerialPort(Thread):
             except InvalidCommandException as e:
                 print(f"******** Received invalid command 0x{e.id:08x}")
             except MalformedPacketException as e:
-                print("******** Received malformed packet")
+                print(f"******** Received malformed packet: {e}")
             except SerialPortException:
                 print("******** Serial communication crashed: restarting...")
                 self.__close_serial()
@@ -85,6 +85,10 @@ class SerialPort(Thread):
                 print(e)
 
                 self.stop()
+            
+            # Take a break!
+            time.sleep(self.__interval)
+
 
         # Close the serial port and signal we are ready
         self.__close_serial()
