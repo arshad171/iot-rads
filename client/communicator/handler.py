@@ -1,31 +1,30 @@
 from communicator.protocol import Packet, DataType, Command
-from communicator.ports import SerialPort
+from communicator.ports import Port
 
 class ProtocolHandler:
     """ Implements the RADS protocol """
 
-    def __init__(self, port: str, baud: int = 9600, interval: float = 1):
-        self.serial = SerialPort(port,baud,interval)
+    def __init__(self, port: Port):
+        self.__port = port
 
         # Handler registries
         self.cmd_handlers = {}
         self.type_handlers = {}
 
     def register_cmd(self, command: Command):
-        """ Register a command handler for a given command """
-        cmd_id = command.value[0]
+        """ Register a command handler for the given command """
 
         # Perform the handler registration
         def decorator(f):
-            if cmd_id not in self.cmd_handlers:
-                self.cmd_handlers[cmd_id] = [f]
+            if command.id not in self.cmd_handlers:
+                self.cmd_handlers[command.id] = [f]
             else:
-                self.cmd_handlers[cmd_id].append(f)
+                self.cmd_handlers[command.id].append(f)
 
         return decorator
 
     def register_type(self, dtype: DataType):
-        """ Register a type handler for a given type """
+        """ Register a type handler for the given type """
         type_id = dtype.value[0]
 
         def decorator(f):
@@ -36,9 +35,9 @@ class ProtocolHandler:
         return decorator
 
     def handle(self) -> Packet | None:
-        """ Handle any incoming packet using command handlers """
-        while not self.serial.inbox.empty():
-            packet: Packet = self.serial.inbox.get()
+        """ Handle any incoming packet using its designated command handlers """
+        while not self.__port.inbox.empty():
+            packet: Packet = self.__port.inbox.get()
             dtype = packet.dtype
             cmd = packet.command
 
@@ -57,5 +56,5 @@ class ProtocolHandler:
                 print(f"******** No command Handler defined for Command <{cmd.label}>")
 
     def send(self, packet: Packet):
-        """ Send a packet to the device """
-        self.serial.inbox.put(packet)
+        """ Send a packet to the port """
+        self.__port.inbox.put(packet)
