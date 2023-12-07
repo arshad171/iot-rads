@@ -1,5 +1,6 @@
 """ Communication ports for the RADS network """
 
+from abc import ABC,abstractmethod
 from threading import Thread,Event
 from queue import SimpleQueue
 import struct
@@ -15,21 +16,105 @@ from exceptions import (
     SerialPortException
 )
 
+class Backend(ABC):
+    """ Abstract implementation of a P2P communication backend """
 
-class SerialPort(Thread):
-    """ Implements a serial port (together with the RADS protocol) """
-    def __init__(self, port: str, baud: int, interval: float):
-        # Store serial port parameters
-        self.__port = port
+    @abstractmethod
+    def open(self):
+        """ Opens the channel """
+
+    @abstractmethod
+    def close(self):
+        """ Closes the channel """
+
+    @abstractmethod
+    def send_packet(self, packet: Packet):
+        """ Sends a packet to the destination """
+
+    @abstractmethod
+    def read_packet(self) -> Packet | None:
+        """ Reads a packet from the network (if any is received within timeout) """
+
+    @abstractmethod
+    def get_timeout(self) -> float:
+        """ Returns the I/O timeout of the channel """
+
+
+class SerialChannel(Backend):
+    """ Implements a serial backend """
+    def __init__(self, path: str = None, baud: int = 9600, timeout: float = 1):
+        if path is None:
+            raise ValueError("Invalid path specified for the serial port")
+
+        self.__path = path
         self.__baud = baud
-        self.__interval = interval
+        self.__tout = timeout
+        self.__port = Serial()
+
+    def open(self):
+        print("******** Opening Serial Port")
+        while not self.__port.is_open:
+            try:
+                self.__port = Serial(self.__path,self.__baud,timeout=self.__tout,parity=PARITY_NONE,
+                                     bytesize=EIGHTBITS,stopbits=STOPBITS_ONE)
+                continue
+            except SerialException:
+                time.sleep(self.__tout)
+
+    def close(self):
+        try:
+            self.__port.close()
+        except SerialException:
+            print("******** Failed to close serial port.")
+
+    def send_packet(self, packet: Packet):
+        try:
+            self.__port.write(packet.serialize())
+        except SerialException as e:
+            raise SerialPortException("Unable to send data through the serial port") from e
+
+    def read_packet(self) -> Packet | None:
+        try:
+            # Read the stream until we find a MAGIC
+            lead = self.__port.read_until(expected=Packet.magic)
+
+            # Validate that we actually got a good MAGIC
+            if len(lead) == 0:
+                return None
+            if not lead.endswith(Packet.magic):
+                raise MalformedPacketException("Invalid MAGIC received")
+
+            header_format = "<III"  # (uint,size_t,uint)
+            header_data = self.__port.read(struct.calcsize(header_format))
+
+            if len(header_data) != struct.calcsize(header_format):
+                raise MalformedPacketException("Invalid header received")
+
+            # Get the header fields
+            cmd_id, data_size, type_id = struct.unpack(header_format, header_data)
+
+            # Now we can read the data
+            payload = self.__port.read(data_size)
+            if len(payload) != data_size:
+                raise MalformedPacketException("Incomplete data stream")
+
+            return Packet(payload, Command.by_id(cmd_id), DataType.by_id(type_id))
+        except SerialException as e:
+            raise SerialPortException(
+                "Error while trying to read data from the serial port") from e
+
+    def get_timeout(self) -> float:
+        return self.__tout
+
+
+class Port(Thread):
+    """ Implements a communication channel for the protocol """
+    def __init__(self, backend: Backend):
+        self.__backend = backend
 
         # The two queues act like letterboxes
         self.inbox = SimpleQueue()
         self.outbox = SimpleQueue()
-
-        # Initialize a dummy serial object
-        self.__serial = Serial()
 
         # Thread stop signaling logic
         self.__stop_event = Event()
@@ -39,36 +124,20 @@ class SerialPort(Thread):
         super().__init__(name="Serial Port Connection")
         self.start()
 
-    def __open_serial(self):
-        print("******** Opening Serial Port")
-        while not self.__serial.is_open:
-            try:
-                self.__serial = Serial(self.__port,self.__baud,timeout=self.__interval,
-                                       parity=PARITY_NONE,bytesize=EIGHTBITS,stopbits=STOPBITS_ONE)
-                continue
-            except SerialException:
-                time.sleep(self.__interval)
-
-    def __close_serial(self):
-        try:
-            self.__serial.close()
-        except SerialException:
-            print("******** Failed to close serial port.")
-
     def run(self):
         # Clear the stop event in case we are resuming
         self.__stop_event.clear()
 
-        # Open the serial port
-        self.__open_serial()
+        # Open the communication channel
+        self.__backend.open()
 
         while not self.__stop_event.is_set():
             # Check whether we have packets to send
             while not self.outbox.empty():
-                self.send_packet(self.outbox.get(False))
+                self.__backend.send_packet(self.outbox.get(False))
 
             try:
-                if (p := self.read_packet()) is not None:
+                if (p := self.__backend.read_packet()) is not None:
                     self.inbox.put(p)
             except InvalidDataTypeException as e:
                 print(f"******** Received data of invalid type 0x{e.id:08x}")
@@ -78,65 +147,26 @@ class SerialPort(Thread):
                 print(f"******** Received malformed packet: {e}")
             except SerialPortException:
                 print("******** Serial communication crashed: restarting...")
-                self.__close_serial()
-                self.__open_serial()
+                self.__backend.close()
+                self.__backend.open()
             except Exception as e:
                 print("******** Unknown exception while handling serial communication!")
                 print(e)
 
                 self.stop()
-            
+
             # Take a break!
-            time.sleep(self.__interval)
+            time.sleep(self.__backend.get_timeout())
 
 
         # Close the serial port and signal we are ready
-        self.__close_serial()
+        self.__backend.close()
         self.__is_stopped = True
 
     def stop(self):
-        """ Stop the thread """
+        """ Stops the mailbox """
         self.__stop_event.set()
 
     def stopped(self) -> bool:
-        """ Wether the thread has stopped """
+        """ Returns whether the mailbox has stopped and the port has been closed """
         return self.__is_stopped
-
-    def send_packet(self, packet: Packet):
-        """ Send a packet over the serial port """
-        try:
-            self.__serial.write(packet.serialize())
-        except SerialException as e:
-            raise SerialPortException("Unable to send data through the serial port") from e
-
-    def read_packet(self) -> Packet:
-        """ Receive a packet from the serial port (if any) """
-        try:
-            # Read the stream until we find a MAGIC
-            lead = self.__serial.read_until(expected=Packet.magic)
-
-            # Validate that we actually got a good MAGIC
-            if len(lead) == 0:
-                return None
-            if not lead.endswith(Packet.magic):
-                raise MalformedPacketException("Invalid MAGIC received")
-
-            header_format = "<III"  # (uint,size_t,uint)
-            header_data = self.__serial.read(struct.calcsize(header_format))
-
-            if len(header_data) != struct.calcsize(header_format):
-                raise MalformedPacketException("Invalid header received")
-
-            # Get the header fields
-            cmd_id, data_size, type_id = struct.unpack(header_format, header_data)
-
-            # Now we can read the data
-            payload = self.__serial.read(data_size)
-            if len(payload) != data_size:
-                raise MalformedPacketException("Incomplete data stream")
-
-            return Packet(payload, Command.by_id(cmd_id), DataType.by_id(type_id))
-        except SerialException as e:
-            raise SerialPortException(
-                "An error occurred while trying to read data from the serial port"
-            ) from e
