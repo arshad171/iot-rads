@@ -1,4 +1,4 @@
-""" Definition of the communication protocol for the RADS network """
+""" Types, Metadata, Descriptors and Containers for the protocol """
 
 from enum import Enum
 import struct
@@ -55,7 +55,7 @@ class Command(Enum):
 
 
 class Packet:
-    """ Network communication packet """
+    """ Protocol packet """
 
     magic: bytes = "IOT-RADS".encode("ascii")
     format: str = "<8sINI{}B"

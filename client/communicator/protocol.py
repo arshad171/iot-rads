@@ -1,3 +1,5 @@
+""" RADS Protocol frontend """
+
 from communicator.format import Packet, DataType, Command
 from communicator.ports import Port
 

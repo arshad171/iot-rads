@@ -7,7 +7,7 @@ import struct
 import time
 
 from serial import Serial,SerialException,EIGHTBITS,STOPBITS_ONE,PARITY_NONE
-from communicator.protocol import Packet,DataType,Command
+from communicator.format import Packet,DataType,Command
 
 from exceptions import (
     MalformedPacketException,
@@ -149,7 +149,7 @@ class Port(Thread):
                 print("******** Serial communication crashed: restarting...")
                 self.__backend.close()
                 self.__backend.open()
-            except Exception as e:
+            except Exception as e: # pylint: disable=broad-except
                 print("******** Unknown exception while handling serial communication!")
                 print(e)
 
