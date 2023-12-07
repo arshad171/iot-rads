@@ -1,74 +1,60 @@
-""" Definition of the communication protocol for the RADS network """
+from communicator.format import Packet, DataType, Command
+from communicator.ports import Port
 
-from enum import Enum
-import struct
+class Protocol:
+    """ Implements the RADS protocol """
 
-from exceptions import (
-    InvalidCommandException,
-    InvalidDataTypeException,
-)
+    def __init__(self, port: Port):
+        self.__port = port
 
+        # Handler registries
+        self.cmd_handlers = {}
+        self.type_handlers = {}
 
-class DataType(Enum):
-    """ Type of data being transmitted """
+    def register_cmd(self, command: Command):
+        """ Register a command handler for the given command """
 
-    CMD = (0, "Command")
-    LOG = (1, "Log")
-    TXT = (2, "Text")
-    DAT = (3, "Binary Data")
-    IMG = (4, "Image")
+        # Perform the handler registration
+        def decorator(f):
+            if command.id not in self.cmd_handlers:
+                self.cmd_handlers[command.id] = [f]
+            else:
+                self.cmd_handlers[command.id].append(f)
 
-    def __init__(self, tid, label):
-        self.id = tid
-        self.label = label
+        return decorator
 
-    @classmethod
-    def by_id(cls, tid: int):
-        """ Get a DataType object by ID """
-        candidates = [m for m in cls if m.value[0] == tid]
+    def register_type(self, dtype: DataType):
+        """ Register a type handler for the given type """
+        type_id = dtype.value[0]
 
-        if len(candidates) == 0:
-            raise InvalidDataTypeException(tid)
-        return candidates[0]
+        def decorator(f):
+            if type_id in self.type_handlers:
+                raise ValueError("Cannot register two handlers for the same type")
+            self.type_handlers[type_id] = f
 
+        return decorator
 
-class Command(Enum):
-    """ Action/Notification associated with each command """
+    def handle(self) -> Packet | None:
+        """ Handle any incoming packet using its designated command handlers """
+        while not self.__port.inbox.empty():
+            packet: Packet = self.__port.inbox.get()
+            dtype = packet.dtype
+            cmd = packet.command
 
-    NONE = (0, "None")
-    GET_TRACK_MASK = (1, "Get railroad mask")
-    SET_TRACK_MASK = (2, "Set railroad mask")
-    REPORT_ANOMALY = (3, "Report Anomaly")
+            # If we have a data type handler use it
+            data = (
+                self.type_handlers[dtype.id](packet.data)
+                if dtype.id in self.type_handlers
+                else packet.data
+            )
 
-    def __init__(self, cid, label):
-        self.id = cid
-        self.label = label
+            # Call every registered function handler
+            if cmd.id in self.cmd_handlers:
+                for handler in self.cmd_handlers[cmd.id]:
+                    handler(data)
+            else:
+                print(f"******** No command Handler defined for Command <{cmd.label}>")
 
-    @classmethod
-    def by_id(cls, cid: int):
-        """Get a Command object by ID"""
-        candidates = [m for m in cls if m.value[0] == cid]
-
-        if len(candidates) == 0:
-            raise InvalidCommandException(cid)
-        return candidates[0]
-
-
-class Packet:
-    """ Network communication packet """
-
-    magic: bytes = "IOT-RADS".encode("ascii")
-    format: str = "<8sINI{}B"
-
-    # Used to build a packet that shall be sent
-    def __init__(self, data: bytes, command: Command, dtype: DataType):
-        self.data = data
-        self.command = command
-        self.dtype = dtype
-
-    def serialize(self) -> bytes:
-        """Transform the packet into a byte array ready to be transmitted"""
-        return struct.pack(Packet.format.format(len(self.data)), self.data)
-
-    def __repr__(self) -> str:
-        return f"PACKET: Type <{self.dtype.label}> Command <{self.command.label}> (Payload size 0x{len(self.data):0x})"
+    def send(self, packet: Packet):
+        """ Send a packet to the port """
+        self.__port.inbox.put(packet)
