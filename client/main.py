@@ -1,25 +1,23 @@
+""" RADS Project PC Client """
+
 import time
 
-from communicator.protocol import Packet, DataType
-from communicator.ports import SerialPort
-from exceptions import SerialPortException
+from communicator.format import Command
+from communicator.ports import SerialChannel
+from communicator.protocol import Protocol
 
-# How frequently to check for serial connection
-CHECK_INTERVAL = 1
+# General clock interval and pace of the program
+INTERVAL_SECONDS = .1
 
-print("Connecting to serial port...")
-CONNECTED = False
+# Define the protocol and command handlers
+handler = Protocol(SerialChannel("/dev/ttyACM0",19200,INTERVAL_SECONDS))
 
-# Keep connecting until we succeed
-while not CONNECTED:
-    try:
-        port = SerialPort("/dev/ttyACM0",19200)
-        CONNECTED = True
-    except SerialPortException:
-        time.sleep(1)
+# Define a handler for log files
+@handler.register_cmd(command=Command.NONE)
+def handle_log(data: bytes):
+    """ Just logs the string """
+    print(data.decode("ascii"))
 
-# Main loop of the program
 while True:
-    p : Packet = port.inbox.get()
-    if p.dtype == DataType.LOG:
-        print(p.data.decode("ascii"))
+    handler.handle()
+    time.sleep(INTERVAL_SECONDS)

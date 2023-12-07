@@ -1,13 +1,13 @@
 """ RADS Protocol frontend """
 
 from communicator.format import Packet, DataType, Command
-from communicator.ports import Port
+from communicator.ports import Port, Backend
 
 class Protocol:
     """ Implements the RADS protocol """
 
-    def __init__(self, port: Port):
-        self.__port = port
+    def __init__(self, backend: Backend):
+        self.__port = Port(backend)
 
         # Handler registries
         self.cmd_handlers = {}
