@@ -21,7 +21,7 @@ class LinearLayer(BaseLayer):
     m_dLdW: np.ndarray = None
     m_dLdb: np.ndarray = None
 
-    momentum: float = 0.0
+    momentum: float = 0.2
 
     def __init__(
         self, input_size: int, output_size: int, name: str = "linear_layer"
