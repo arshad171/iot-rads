@@ -1,13 +1,11 @@
 #include "src/utils/common.h"
 #include "src/camera/camera.h"
-#include "src/protocol/protocol.h"
 #include "src/dnn/network.h"
 
 // Platform settings
 #include "settings/device.h"
 
 // External libraries
-// #include <BasicLinearAlgebra.h>
 #include<Arduino_OV767X.h>
 
 void setup() {

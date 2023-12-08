@@ -1,5 +1,5 @@
 #pragma once
-#include "common.h"
+#include <Arduino.h>
 
 // Define the possible log levels
 #define LOG_DEBUG   0

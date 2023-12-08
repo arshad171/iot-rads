@@ -12,11 +12,9 @@ from exceptions import (
 class DataType(Enum):
     """ Type of data being transmitted """
 
-    CMD = (0, "Command")
-    LOG = (1, "Log")
-    TXT = (2, "Text")
-    DAT = (3, "Binary Data")
-    IMG = (4, "Image")
+    LOG = (0, "Log")
+    MAT = (1, "Matrix")
+    IMG = (2, "Image")
 
     def __init__(self, tid, label):
         self.id = tid
@@ -34,11 +32,12 @@ class DataType(Enum):
 
 class Command(Enum):
     """ Action/Notification associated with each command """
-
-    NONE = (0, "None")
-    GET_TRACK_MASK = (1, "Get railroad mask")
-    SET_TRACK_MASK = (2, "Set railroad mask")
-    REPORT_ANOMALY = (3, "Report Anomaly")
+    WRITE_LOG = (0, "Write logs")
+    REPORT_ANOMALY = (1, "Report anomaly")
+    GET_FEATURE_VECTOR = (2, "Request feature vector")
+    SET_FEATURE_VECTOR = (3, "Update feature vector")
+    GET_FRAME = (4, "Get picture from camera")
+    SET_FRAME = (5, "Store picture from camera")
 
     def __init__(self, cid, label):
         self.id = cid

@@ -1,4 +1,5 @@
-#include "../utils/logging.h"
+#include "../utils/common.h"
+#include "../../settings/dnn.h"
 #include "network.h"
 #include <BasicLinearAlgebra.h>
 
@@ -7,7 +8,6 @@
 #include "layers/relu.h"
 #include "losses/squared.h"
 
-using namespace BLA;
 
 const float momentum = MOMENTUM;
 const float learning_rate = LEARNING_RATE;
@@ -70,7 +70,6 @@ BLA::Matrix<out1, 1> dLdb1;
 BLA::Matrix<out2, 1> dLdb2;
 BLA::Matrix<out3, 1> dLdb3;
 BLA::Matrix<out4, 1> dLdb4;
-
 
 void updateXBatch(bool trainingData) {
   for (int r = 0; r < xBatch.Rows; r++) {

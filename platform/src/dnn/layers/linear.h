@@ -1,6 +1,5 @@
+#pragma once
 #include "../utils/matrix.h"
-
-using namespace BLA;
 
 template <int TinputSize, int ToutputSize, int TbatchSize>
 class LinearLayer {

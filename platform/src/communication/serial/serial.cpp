@@ -1,28 +1,6 @@
-#include "protocol.h"
-#include <string.h>
+#include "../../utils/common.h"
+#include "serial.h"
 
-// Global serial port wrapper object
-SerialPort SP;
-
-// Begin of transmission marker
-char *packet_magic = "IOT-RADS";
-
-void send_data(byte *data,size_t sz,DType type,Cmd cmd,Channel *chan) {
-    Packet *packet = new Packet();
-
-    strcpy(packet->header.magic,packet_magic);
-    packet->header.command = cmd;
-    packet->header.size = sz;
-    packet->header.type = type;
-    packet->data = data;
-
-    // Send over the channel
-    chan->send(*packet);
-
-    delete packet;
-}
-
-// Implement serial port packet handling
 void SerialPort::initialize(unsigned long baud,unsigned long timeout_ms) {
     Serial.begin(baud,SERIAL_8N1);
     Serial.setTimeout(timeout_ms);
@@ -120,3 +98,6 @@ bool SerialPort::blocking_wait(unsigned long timeout_ms) {
     while(!this->is_available() && (timeout_ms == 0 || millis() <= limit_time));
     return this->is_available();
 }
+
+// Global serial port wrapper object
+SerialPort SP;
