@@ -8,7 +8,6 @@
 #include "layers/relu.h"
 #include "losses/squared.h"
 
-using namespace BLA;
 
 const float learning_rate = LEARNING_RATE;
 const int batch_size = BATCH_SIZE;
@@ -70,7 +69,6 @@ BLA::Matrix<out1, 1> dLdb1;
 BLA::Matrix<out2, 1> dLdb2;
 BLA::Matrix<out3, 1> dLdb3;
 BLA::Matrix<out4, 1> dLdb4;
-
 
 void updateXBatch(bool trainingData) {
   for (int r = 0; r < xBatch.Rows; r++) {

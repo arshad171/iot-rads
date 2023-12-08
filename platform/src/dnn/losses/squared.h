@@ -1,8 +1,6 @@
 #pragma once
 #include "../utils/matrix.h"
 
-using namespace BLA;
-
 template <int TinputSize, int TbatchSize>
 class SquaredLoss {
   public:
