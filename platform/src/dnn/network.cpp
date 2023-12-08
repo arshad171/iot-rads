@@ -1,11 +1,11 @@
-#include "logging.h"
+#include "../utils/logging.h"
 #include "network.h"
 #include <BasicLinearAlgebra.h>
 
 // NN Layers
-#include "neural_network/linear_layer.h"
-#include "neural_network/relu_layer.h"
-#include "neural_network/squared_loss.h"
+#include "layers/linear.h"
+#include "layers/relu.h"
+#include "losses/squared.h"
 
 using namespace BLA;
 

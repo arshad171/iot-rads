@@ -1,4 +1,4 @@
-#include "matrix_utils.h"
+#include "../utils/matrix.h"
 
 using namespace BLA;
 

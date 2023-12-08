@@ -1,18 +1,14 @@
-#include "common.h"
-#include "camera.h"
-#include "protocol.h"
-#include "network.h"
+#include "src/utils/common.h"
+#include "src/camera/camera.h"
+#include "src/protocol/protocol.h"
+#include "src/dnn/network.h"
 
 // Platform settings
 #include "settings/device.h"
 
-// Neural network implementation
-#include "neural_network/linear_layer.h"
-#include "neural_network/relu_layer.h"
-#include "neural_network/squared_loss.h"
-
 // External libraries
 // #include <BasicLinearAlgebra.h>
+#include<Arduino_OV767X.h>
 
 void setup() {
     // Setup the board's status indicators
