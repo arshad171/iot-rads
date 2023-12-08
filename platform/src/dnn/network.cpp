@@ -9,6 +9,7 @@
 
 using namespace BLA;
 
+const float momentum = MOMENTUM;
 const float learning_rate = LEARNING_RATE;
 const int batch_size = BATCH_SIZE;
 const int NUM_TRAINING_DATA = 100;
@@ -111,29 +112,45 @@ float iterate(BLA::Matrix<in1, batch_size> x) {
 
   // backward & gradient descent
   dLdY4 = rel4.backward(dLdY4);
-  dLdW4 = lin4.gradWeights(dLdY4);
-  dLdb4 = lin4.gradBias(dLdY4);
+  // dLdW4 = lin4.gradWeights(dLdY4);
+  // dLdb4 = lin4.gradBias(dLdY4);
+  dLdW4 *= momentum;
+  dLdW4 += (lin4.gradWeights(dLdY4) * (1 - momentum));
+  dLdb4 *= momentum;
+  dLdb4 += (lin4.gradBias(dLdY4) * (1 - momentum));
   lin4.weights -= dLdW4 * learning_rate;
   lin4.bias -= dLdb4 * learning_rate;
   dLdY3 = lin4.backward(dLdY4);
 
   dLdY3 = rel3.backward(dLdY3);
-  dLdW3 = lin3.gradWeights(dLdY3);
-  dLdb3 = lin3.gradBias(dLdY3);
+  // dLdW3 = lin3.gradWeights(dLdY3);
+  // dLdb3 = lin3.gradBias(dLdY3);
+  dLdW3 *= momentum;
+  dLdW3 += (lin3.gradWeights(dLdY3) * (1 - momentum));
+  dLdb3 *= momentum;
+  dLdb3 += (lin3.gradBias(dLdY3) * (1 - momentum));
   lin3.weights -= dLdW3 * learning_rate;
   lin3.bias -= dLdb3 * learning_rate;
   dLdY2 = lin3.backward(dLdY3);
 
   dLdY2 = rel2.backward(dLdY2);
-  dLdW2 = lin2.gradWeights(dLdY2);
-  dLdb2 = lin2.gradBias(dLdY2);
+  // dLdW2 = lin2.gradWeights(dLdY2);
+  // dLdb2 = lin2.gradBias(dLdY2);
+  dLdW2 *= momentum;
+  dLdW2 += (lin2.gradWeights(dLdY2) * (1 - momentum));
+  dLdb2 *= momentum;
+  dLdb2 += (lin2.gradBias(dLdY2) * (1 - momentum));
   lin2.weights -= dLdW2 * learning_rate;
   lin2.bias -= dLdb2 * learning_rate;
   dLdY1 = lin2.backward(dLdY2);
 
   dLdY1 = rel1.backward(dLdY1);
-  dLdW1 = lin1.gradWeights(dLdY1);
-  dLdb1 = lin1.gradBias(dLdY1);
+  // dLdW1 = lin1.gradWeights(dLdY1);
+  // dLdb1 = lin1.gradBias(dLdY1);
+  dLdW1 *= momentum;
+  dLdW1 += (lin1.gradWeights(dLdY1) * (1 - momentum));
+  dLdb1 *= momentum;
+  dLdb1 += (lin1.gradBias(dLdY1) * (1 - momentum));
   lin1.weights -= dLdW1 * learning_rate;
   lin1.bias -= dLdb1 * learning_rate;
 
