@@ -16,7 +16,7 @@ const int NUM_EPOCHS = 10;
 const int NUM_ITERS = int(NUM_TRAINING_DATA / batch_size);
 
 // m, n, N
-const int in1 = 128;
+const int in1 = FEATURE_DIM;
 const int out1 = 10;
 
 const int in2 = 10;
@@ -26,7 +26,7 @@ const int in3 = 2;
 const int out3 = 10;
 
 const int in4 = 10;
-const int out4 = 128;
+const int out4 = FEATURE_DIM;
 
 
 LinearLayer<in1, out1, batch_size> lin1;
