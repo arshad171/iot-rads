@@ -47,7 +47,7 @@ class ImageDataGenerator:
         self.images = list(filter(lambda filename: filename.endswith(".jpg"), images))
         self.length = len(self.images)
 
-    def get_next_sample(self, raw=False) -> Tuple[np.ndarray, np.ndarray]:
+    def get_next_sample(self, raw=False) -> Tuple[np.ndarray, np.ndarray] | bytearray:
         """
         call this method get the next sample (x, y) pair.
         raw: True would return the raw bytes for transmission
