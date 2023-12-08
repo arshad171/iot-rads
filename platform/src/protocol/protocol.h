@@ -1,30 +1,30 @@
 #pragma once
 #include "../utils/common.h"
 
-// Different kinds of data we can send
-enum DType : byte {
+// ========================================== PROTOCOL STRUCTURE DEFINITION ===========================================
+enum DType : byte { // Types of data that can be transmitted
     CMD,
     LOG,
     TXT,
     DAT,
+    MAT,
     IMG
 };
 
-// Possible commands (that is, action requests) to be sent along packets
-// RULES: All packets sent TO the arduino SHALL NOT have action "NONE"
-enum Cmd : byte {
-    // Default (no specified action)
-    NONE,
-
-    // Track segmentation options
-    GET_TRACK_MASK, // Used by the Arduino, send picture and request mask
-    SET_TRACK_MASK, // Sent by the Cloud, set the track mask in memory
-
-    // Anomaly detection
-    REPORT_ANOMALY // Used by the arduino to report an anomaly. Optionally an image may be attached
+enum Cmd : byte { // Commands that can be sent to or received from other devices
+    NONE, // No specified action (default)
+    // Utility commands and intra-device coordination
+    WRITE_LOG,
+    REPORT_ANOMALY,
+    // Training data manipulation
+    GET_FEATURE_VECTOR, // Request feature vector from embedder
+    SET_FEATURE_VECTOR, // Response to previous request
+    // Image manipulation
+    GET_FRAME, // Request frame from camera device
+    SET_FRAME, // Response to previous request
 };
 
-// Transmission packet
+// Protocol packet
 struct PHeader {
     char magic[8] = { 0 };
     Cmd command;
@@ -37,7 +37,7 @@ struct Packet {
     byte *data;
 };
 
-// Transmission channel
+// =========================================== PROTOCOL CHANNEL DEFINITION ============================================
 class Channel {
     protected:
         bool initialized = false;
@@ -50,10 +50,7 @@ class Channel {
         }
 };
 
-// Send data through some channel
-void send_data(byte *data,size_t sz,DType type,Cmd cmd,Channel *chan);
-
-// Serial port definition
+// Serial port implementation
 class SerialPort : public Channel {
     public:
         void initialize(unsigned long baud,unsigned long timeout_ms);
@@ -63,6 +60,10 @@ class SerialPort : public Channel {
         bool blocking_wait(unsigned long timeout_ms);
 };
 
-// Make the serial port object available
+// =============================================== PROTOCOL ARDUINO API ===============================================
+// Send data through some channel
+void send_data(byte *data,size_t sz,DType type,Cmd cmd,Channel *chan);
+
+// Make the global serial port object available
 extern SerialPort SP;
 
