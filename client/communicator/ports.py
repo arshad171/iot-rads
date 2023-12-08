@@ -82,7 +82,7 @@ class SerialChannel(Backend):
             if len(lead) == 0:
                 return None
             if not lead.endswith(Packet.magic):
-                raise MalformedPacketException("Invalid MAGIC received")
+                raise MalformedPacketException(f"Invalid MAGIC received ({lead.decode('ascii')})")
 
             header_format = "<III"  # (uint,size_t,uint)
             header_data = self.__port.read(struct.calcsize(header_format))
