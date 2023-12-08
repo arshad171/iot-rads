@@ -18,6 +18,7 @@
                 // Included libraries
                 "~/Arduino/libraries/Arduino_OV767X/src",
                 "~/Arduino/libraries/BasicLinearAlgebra",
+                "~/Arduino/libraries/ArduinoBLE/src",
 
                 // Platform libraries
                 // "~/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/MLC/src",

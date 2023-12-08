@@ -1,5 +1,5 @@
 #include "logging.h"
-#include "../protocol/protocol.h"
+#include "../communication/serial/protocol.h"
 #include <stdarg.h>
 #include <stdlib.h>
 #include <Arduino.h>
