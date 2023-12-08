@@ -67,7 +67,7 @@ void log(int log_level,char *file_name,int line_no,char *msg_format,...) {
 
     if(SP.is_available()) {
         // Do NOT log if we don't have an available serial port or infinite recursion will occur
-        pack((byte *) log_buffer,strlen(log_buffer)*sizeof(char),DType::LOG,Cmd::NONE,&SP);
+        pack((byte *) log_buffer,strlen(log_buffer)*sizeof(char),DType::LOG,Cmd::WRITE_LOG,&SP);
     }
 
     free(msg_buffer);

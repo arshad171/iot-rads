@@ -3,16 +3,12 @@
 
 // Protocol structure definition
 enum DType : byte { // Types of data that can be transmitted
-    CMD,
     LOG,
-    TXT,
-    DAT,
     MAT,
     IMG
 };
 
 enum Cmd : byte { // Commands that can be sent to or received from other devices
-    NONE, // No specified action (default)
     // Utility commands and intra-device coordination
     WRITE_LOG,
     REPORT_ANOMALY,
