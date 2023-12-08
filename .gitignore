@@ -11,8 +11,7 @@ cam_test/
 # C extensions
 *.so
 
-# VS code and Arduino
-.vscode
+# Arduino
 .output
 
 # Distribution / packaging
