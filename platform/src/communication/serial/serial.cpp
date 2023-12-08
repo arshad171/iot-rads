@@ -1,3 +1,4 @@
+#include "../../utils/common.h"
 #include "serial.h"
 
 void SerialPort::initialize(unsigned long baud,unsigned long timeout_ms) {
@@ -88,10 +89,6 @@ Packet SerialPort::recv() {
 // Can we send data to the serial port?
 bool SerialPort::is_available() {
     if(Serial) return true; else return false;
-}
-
-bool SerialPort::is_initialized() {
-    return this->initialized;
 }
 
 // Wait until the serial port becomes available (set timeout to 0 for indefinite wait)

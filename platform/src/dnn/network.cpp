@@ -1,4 +1,5 @@
-#include "../utils/logging.h"
+#include "../utils/common.h"
+#include "../../settings/dnn.h"
 #include "network.h"
 #include <BasicLinearAlgebra.h>
 

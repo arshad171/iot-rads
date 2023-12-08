@@ -1,5 +1,5 @@
 #pragma once
-#include "../../utils/common.h"
+#include <Arduino.h>
 
 // Protocol structure definition
 enum DType : byte { // Types of data that can be transmitted

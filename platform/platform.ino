@@ -1,6 +1,5 @@
 #include "src/utils/common.h"
 #include "src/camera/camera.h"
-#include "src/communication/serial/protocol.h"
 #include "src/dnn/network.h"
 
 // Platform settings

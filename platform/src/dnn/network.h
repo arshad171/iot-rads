@@ -1,5 +1,4 @@
-#include "../utils/common.h"
-#include "../../settings/dnn.h"
+#pragma once
 
 void initialize();
 void train();

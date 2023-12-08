@@ -1,9 +1,8 @@
-#include "packet.h"
+#pragma once
+#include "../channel.h"
 
 // Serial port wrapper for the RADS protocol
-class SerialPort {
-    private:
-        bool initialized = false;
+class SerialPort : public Channel {
     public:
         void initialize(unsigned long baud,unsigned long timeout_ms);
         
@@ -13,9 +12,5 @@ class SerialPort {
         
         // Flow control
         bool is_available();
-        bool is_initialized();
         bool blocking_wait(unsigned long timeout_ms);
 };
-
-// Global wrapper object
-extern SerialPort SP;

@@ -1,8 +1,8 @@
+#include "common.h"
 #include "logging.h"
-#include "../communication/serial/protocol.h"
+#include "../communication/protocol.h"
 #include <stdarg.h>
 #include <stdlib.h>
-#include <Arduino.h>
 
 // Display names for the log levels
 char *log_lvl_names[5] = {"DBG","INF","WRN","ERR","DED"};
