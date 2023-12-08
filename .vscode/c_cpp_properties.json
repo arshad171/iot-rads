@@ -3,7 +3,7 @@
     "configurations": [
         {
             "name": "Arduino",
-            "compilerPath": "/home/alessandro/.arduino15/packages/arduino/tools/arm-none-eabi-gcc/7-2017q4/bin/arm-none-eabi-g++",
+            "compilerPath": "~/.arduino15/packages/arduino/tools/arm-none-eabi-gcc/7-2017q4/bin/arm-none-eabi-g++",
             "compilerArgs": [
                 "-w",
                 "-nostdlib"
@@ -11,38 +11,37 @@
             "intelliSenseMode": "linux-gcc-arm",
             "includePath": [
                 // Arduino core for the Mbed 33 Nano BLE
-                "/home/alessandro/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/variants/ARDUINO_NANO33BLE",
-                "/home/alessandro/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/cores/arduino",
-                "/home/alessandro/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/cores/arduino/api",
-                "/home/alessandro/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/cores/arduino/mbed/**",
+                "~/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/variants/ARDUINO_NANO33BLE",
+                "~/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/cores/arduino",
+                "~/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/cores/arduino/mbed/**",
 
                 // Included libraries
-                "/home/alessandro/Arduino/libraries/Arduino_OV767X/src",
-                "/home/alessandro/Arduino/libraries/BasicLinearAlgebra",
-                "/home/alessandro/Arduino/libraries/Arduino_CRC32/src",
+                "~/Arduino/libraries/Arduino_OV767X/src",
+                "~/Arduino/libraries/BasicLinearAlgebra",
+                "~/Arduino/libraries/Arduino_CRC32/src",
 
                 // Platform libraries
-                // "/home/alessandro/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/MLC/src",
-                // "/home/alessandro/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/MRI/src",
-                // "/home/alessandro/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/Nano33BLE_System/src",
-                // "/home/alessandro/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/PDM/src",
-                // "/home/alessandro/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/Scheduler/src",
-                // "/home/alessandro/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/SFU/src",
-                // "/home/alessandro/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/SocketWrapper/src",
-                // "/home/alessandro/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/SPI",
-                // "/home/alessandro/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/ThreadDebug/src",
-                // "/home/alessandro/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/USBHID/src",
-                // "/home/alessandro/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/USBMIDI",
-                // "/home/alessandro/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/USBMSD/src",
-                // "/home/alessandro/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/Wire",
+                // "~/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/MLC/src",
+                // "~/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/MRI/src",
+                // "~/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/Nano33BLE_System/src",
+                // "~/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/PDM/src",
+                // "~/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/Scheduler/src",
+                // "~/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/SFU/src",
+                // "~/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/SocketWrapper/src",
+                // "~/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/SPI",
+                // "~/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/ThreadDebug/src",
+                // "~/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/USBHID/src",
+                // "~/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/USBMIDI",
+                // "~/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/USBMSD/src",
+                // "~/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/Wire",
 
                 // Standard library
-                "/home/alessandro/.arduino15/packages/arduino/tools/arm-none-eabi-gcc/7-2017q4/arm-none-eabi/include/c++/7.2.1",
-                "/home/alessandro/.arduino15/packages/arduino/tools/arm-none-eabi-gcc/7-2017q4/arm-none-eabi/include/c++/7.2.1/arm-none-eabi",
-                "/home/alessandro/.arduino15/packages/arduino/tools/arm-none-eabi-gcc/7-2017q4/arm-none-eabi/include/c++/7.2.1/backward",
-                "/home/alessandro/.arduino15/packages/arduino/tools/arm-none-eabi-gcc/7-2017q4/lib/gcc/arm-none-eabi/7.2.1/include",
-                "/home/alessandro/.arduino15/packages/arduino/tools/arm-none-eabi-gcc/7-2017q4/lib/gcc/arm-none-eabi/7.2.1/include-fixed",
-                "/home/alessandro/.arduino15/packages/arduino/tools/arm-none-eabi-gcc/7-2017q4/arm-none-eabi/include"
+                "~/.arduino15/packages/arduino/tools/arm-none-eabi-gcc/7-2017q4/arm-none-eabi/include/c++/7.2.1",
+                "~/.arduino15/packages/arduino/tools/arm-none-eabi-gcc/7-2017q4/arm-none-eabi/include/c++/7.2.1/arm-none-eabi",
+                "~/.arduino15/packages/arduino/tools/arm-none-eabi-gcc/7-2017q4/arm-none-eabi/include/c++/7.2.1/backward",
+                "~/.arduino15/packages/arduino/tools/arm-none-eabi-gcc/7-2017q4/lib/gcc/arm-none-eabi/7.2.1/include",
+                "~/.arduino15/packages/arduino/tools/arm-none-eabi-gcc/7-2017q4/lib/gcc/arm-none-eabi/7.2.1/include-fixed",
+                "~/.arduino15/packages/arduino/tools/arm-none-eabi-gcc/7-2017q4/arm-none-eabi/include"
             ],
             "cStandard": "c11",
             "cppStandard": "c++11",
