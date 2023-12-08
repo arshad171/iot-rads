@@ -5,16 +5,16 @@ void die(uint8_t strobes) {
     uint8_t count = 0;
 
     // Switch off the RGB led
-    digitalWrite(LEDR,1);
-    digitalWrite(LEDG,1);
-    digitalWrite(LEDB,1);
+    DWRITE(LEDR,1);
+    DWRITE(LEDG,1);
+    DWRITE(LEDB,1);
 
     // Switch off the power led
-    digitalWrite(LED_PWR,0);
+    DWRITE(LED_PWR,0);
 
     int led_state = 1;
     while(strobes > 0) {
-        digitalWrite(LEDR,led_state);
+        DWRITE(LEDR,led_state);
 
         // Keep track of the strobes
         count += led_state;
@@ -30,7 +30,7 @@ void die(uint8_t strobes) {
     }
 
     // If strobes is <= 0 then steady red
-    digitalWrite(LEDR,0);
+    DWRITE(LEDR,0);
     while(1);
 }
 
