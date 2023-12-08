@@ -1,7 +1,6 @@
 #include "camera.h"
 
 #include <stdlib.h>
-#include <Arduino_CRC32.h>
 #include <Arduino_OV767X.h>
 
 static int frame_sz;
