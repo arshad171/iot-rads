@@ -1,6 +1,7 @@
 import os
+import random
 from pathlib import Path
-from typing import Any
+from typing import Any, Tuple
 from PIL import Image
 import numpy as np
 from scipy.io import loadmat
@@ -18,6 +19,7 @@ class ImageDataGenerator:
         self.use_dynamic_mask = use_dynamic_mask
         self.image_size = image_size
         self.path = Path(dataset_path)
+        self.read_counter = 0
 
         if mask_path:
             mask = loadmat(mask_path)
@@ -45,6 +47,25 @@ class ImageDataGenerator:
         self.images = list(filter(lambda filename: filename.endswith(".jpg"), images))
         self.length = len(self.images)
 
+    def get_next_sample(self, raw=False) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        call this method get the next sample (x, y) pair.
+        raw: True would return the raw bytes for transmission
+        """
+        (x, y) = self.__getitem__(self.read_counter)
+
+        self.read_counter += 1
+
+        if self.read_counter >= self.length:
+            self.read_counter = 0
+            random.shuffle(self.images)
+            print("shuffling")
+
+        if raw:
+            return bytearray(x)
+        else:
+            return (x, y)
+
     def __len__(self):
         return self.length
 
@@ -56,7 +77,7 @@ class ImageDataGenerator:
 
         return image
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx) -> Tuple[np.ndarray, np.ndarray]:
         image = self.read_image(os.path.join(self.path, self.images[idx]))
 
         # image = cv2.imread(os.path.join(self.path, self.images[idx]))
