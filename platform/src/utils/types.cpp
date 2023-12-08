@@ -1,6 +1,5 @@
 #include "../utils/common.h"
 #include "types.h"
-#include <BasicLinearAlgebra.h>
 #include <stdlib.h>
 
 template<int r, int c, typename t>
