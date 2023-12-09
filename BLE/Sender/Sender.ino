@@ -10,11 +10,12 @@ const int arrayLength = sizeof(floatArray) / sizeof(float);
 const int byteArraySize = arrayLength * sizeof(float);
 byte byteArray[byteArraySize] = {0};
 
-BLEService service1("19B10000-E8F2-537E-4F6C-D104768A1214"); // Bluetooth® Low Energy LED Service
+int flag = 1;
 
-// BLEByteCharacteristic characteristic1("weights", BLERead | BLEWrite | BLEBroadcast | BLENotify);
-// BLEByteCharacteristic characteristic1("2A37", BLERead | BLEWrite | BLEBroadcast | BLENotify);
-BLECharacteristic characteristic1("2A37", BLERead | BLEWrite | BLEBroadcast | BLENotify, byteArraySize);
+BLEService networkService("19B10000-E8F2-537E-4F6C-D104768A1214"); // Bluetooth® Low Energy LED Service
+
+BLECharacteristic readCharacteristic("2A36", BLERead | BLEIndicate,byteArraySize);
+BLECharacteristic writeCharacteristic("2A37", BLEWrite, byteArraySize);
 
 
 void floatArrayToByteArray(float* floatArray, byte* byteArray, int arrayLength) {
@@ -27,6 +28,20 @@ void byteArrayToFloatArray(byte* byteArray, float* floatArray, int arrayLength) 
   memcpy(floatArray, byteArray, arrayLength * sizeof(float));
 }
 
+void blePeripheralConnectHandler(BLEDevice central) {
+  // central connected event handler
+  Serial.print("Connected event, central: ");
+  Serial.println(central.address());
+  BLE.advertise();
+}
+
+void blePeripheralDisconnectHandler(BLEDevice central) {
+  // central disconnected event handler
+  Serial.print("Disconnected event, central: ");
+  Serial.println(central.address());
+  BLE.advertise();
+  flag = 1;
+}
 void setup()
 {
     floatArrayToByteArray(floatArray, byteArray, arrayLength);
@@ -45,18 +60,23 @@ void setup()
 
     // set advertised local name and service UUID:
     BLE.setLocalName("sender");
-    BLE.setAdvertisedService(service1);
+    BLE.setAdvertisedService(networkService);
 
     // add the characteristic to the service
-    service1.addCharacteristic(characteristic1);
+    networkService.addCharacteristic(readCharacteristic);
+    networkService.addCharacteristic(writeCharacteristic);
 
     // add service
-    BLE.addService(service1);
+    BLE.addService(networkService);
+
+    BLE.setEventHandler(BLEConnected, blePeripheralConnectHandler);
+    BLE.setEventHandler(BLEDisconnected, blePeripheralDisconnectHandler);
+
 
     // set the initial value for the characeristic:
     // characteristic1.writeValue(buffer);
     // characteristic1.writeValue(buffer, SIZE_IN_BYTES);
-    characteristic1.writeValue(byteArray, byteArraySize);
+    readCharacteristic.writeValue(byteArray, byteArraySize);
 
     // start advertising
     BLE.advertise();
@@ -66,16 +86,27 @@ void setup()
 
 void loop()
 {
-    BLEDevice central = BLE.central();
+  BLE.poll();
+  if (flag == 1){
 
-    if (central) {
-      while(central.connect()) {
-        Serial.println("sending data");
-        // characteristic1.writeValue(buffer);
-        // characteristic1.writeValue(buffer, SIZE_IN_BYTES);
-        characteristic1.writeValue(byteArray, byteArraySize);
-        delay(1000);
-      }
-    }
+      readCharacteristic.writeValue(byteArray, byteArraySize);
+      Serial.println("Sending DATA!!!");
+
+  }
+
+  if (writeCharacteristic.written()){
+      flag = 0;
+      writeCharacteristic.readValue( (byte*)&floatArray, byteArraySize);
+
+      Serial.println("My float Values:");
+      Serial.println(floatArray[0]);
+      Serial.println(floatArray[1]);
+      Serial.println(floatArray[2]);    
+
+      floatArray[0] = floatArray[0] + 0.5;
+
+      readCharacteristic.writeValue((byte*)&floatArray,byteArraySize);
+
+  }
 
 }
