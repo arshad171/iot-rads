@@ -1,9 +1,9 @@
 #pragma once
 #include "../utils/matrix.h"
 
-template <int TinputSize, int ToutputSize, int TbatchSize>
+template<int TinputSize, int ToutputSize, int TbatchSize>
 class LinearLayer {
-  public:
+public:
   boolean typeTrainable = true;
 
   // m, n, N
@@ -22,8 +22,8 @@ class LinearLayer {
     this->bias.Fill(0.0);
     // init weights
     // unifrom initialzer
-    for(int r = 0; r < ToutputSize; r++) {
-      for(int c = 0; c < TinputSize; c++) {
+    for (int r = 0; r < ToutputSize; r++) {
+      for (int c = 0; c < TinputSize; c++) {
         this->weights(r, c) = float(random(-1000, 1000) / 1000.0);
       }
     }
@@ -38,9 +38,9 @@ class LinearLayer {
     BLA::Matrix<ToutputSize, TbatchSize> Y;
     BLA::Matrix<ToutputSize, TbatchSize> biasBroadcast;
     biasBroadcast.Fill(0.0);
-    
+
     for (int c = 0; c < TbatchSize; c++) {
-      for(int r = 0; r < ToutputSize; r++) {
+      for (int r = 0; r < ToutputSize; r++) {
         biasBroadcast(r, c) = this->bias(r, 0);
       }
     }
@@ -52,7 +52,7 @@ class LinearLayer {
 
     // update lastX
     this->lastX = X;
-    
+
     return Y;
   }
 
@@ -62,9 +62,9 @@ class LinearLayer {
   */
   BLA::Matrix<TinputSize, TbatchSize> backward(BLA::Matrix<ToutputSize, TbatchSize> dLdY) {
     BLA::Matrix<TinputSize, TbatchSize> dLdX;
-    
+
     dLdX = ~this->weights * dLdY;
-    
+
     return dLdX;
   }
 
@@ -75,9 +75,9 @@ class LinearLayer {
   */
   BLA::Matrix<ToutputSize, TinputSize> gradWeights(BLA::Matrix<ToutputSize, TbatchSize> dLdY) {
     BLA::Matrix<ToutputSize, TinputSize> dLdW;
-    
+
     dLdW = dLdY * ~this->lastX;
-    
+
     return dLdW;
   }
 
@@ -90,9 +90,39 @@ class LinearLayer {
     BLA::Matrix<ToutputSize, 1> dLdb;
 
     dLdb = sumCols(dLdY);
-    
+
     return dLdb;
   }
 
+  void copyWeightsToBuffer(int rowIndex, float *buffer, int size) {
+    for (int c = 0; c < size; c++) {
+      if (c >= ToutputSize) {
+        buffer[c] = 0.0;
+      } else {
+        buffer[c] = this->weights(rowIndex, c);
+      }
+    }
+  }
 
+  void copyBiasToBuffer(float *buffer, int size) {
+    for (int r = 0; r < size; r++) {
+      if (r >= ToutputSize) {
+        buffer[r] = 0.0;
+      } else {
+        buffer[r] = this->bias(r, 1);
+      }
+    }
+  }
+
+    void copyWeightsFromBuffer(int rowIndex, float *buffer, int size) {
+    for (int c = 0; c < ToutputSize; c++) {
+      this->weights(rowIndex, c) = buffer[c];
+    }
+  }
+
+  void copyBiasFromBuffer(float *buffer, int size) {
+    for (int r = 0; r < ToutputSize; r++) {
+      this->bias(r, 1) = buffer[r];
+    }
+  }
 };
