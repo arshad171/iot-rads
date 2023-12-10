@@ -17,22 +17,38 @@
 
 
 bool sendFlag = true;
-const int BLE_NUM_WEIGHTS = 100;
+const int BLE_NUM_WEIGHTS = 25;
 
-typedef struct __attribute__((packed))
-{
-    bool syncFlag = false;
-    int layerIndex;
-    int rowIndex;
-    float weights[BLE_NUM_WEIGHTS];
+typedef struct __attribute__((packed)) {
+  bool syncFlag = false;
+  int layerIndex;
+  int rowIndex;
+  int colIndex;
+  float weights[BLE_NUM_WEIGHTS];
 } WeightsBuffer;
 
-WeightsBuffer weightsBuffer;
+int layerIndex = 1;
+int rowIndex, colIndex = 0;
 
-BLEService networkService("19B10000-E8F2-537E-4F6C-D104768A1214"); // Bluetooth® Low Energy LED Service
+// typedef struct __attribute__((packed)) {
+//   int a;
+//   int b;
+//   float weights[25] = {-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0};
+// } Temp;
 
-BLECharacteristic readCharacteristic("2A36", BLERead | BLEIndicate, sizeof(weightsBuffer));
-BLECharacteristic writeCharacteristic("2A37", BLEWrite, sizeof(weightsBuffer));
+WeightsBuffer sendWeightsBuffer, receiveWeightsBuffer;
+// Temp temp1, temp2;
+
+BLEService networkService("19B10001-E8F2-537E-4F6C-D104768A1214");  // Bluetooth® Low Energy LED Service
+
+BLECharacteristic readCharacteristic("2A36", BLERead | BLEIndicate, sizeof(sendWeightsBuffer));
+BLECharacteristic writeCharacteristic("2A37", BLEWrite, sizeof(sendWeightsBuffer));
+
+// BLECharacteristic readCharacteristic("2A36", BLERead | BLEIndicate, 1);
+// BLECharacteristic writeCharacteristic("2A37", BLEWrite, 1);
+
+// BLECharacteristic readCharacteristic("2A36", BLERead | BLEIndicate, sizeof(temp1));
+// BLECharacteristic writeCharacteristic("2A37", BLEWrite, sizeof(temp1));
 
 const float momentum = MOMENTUM;
 const float learning_rate = LEARNING_RATE;
@@ -95,183 +111,220 @@ BLA::Matrix<out2, 1> dLdb2;
 BLA::Matrix<out3, 1> dLdb3;
 BLA::Matrix<out4, 1> dLdb4;
 
-void updateXBatch(bool trainingData)
-{
-    for (int r = 0; r < xBatch.Rows; r++)
-    {
-        for (int c = 0; c < xBatch.Cols; c++)
-        {
-            if (trainingData)
-            {
-                // get training data here, request from serial
-                xBatch(r, c) = float(random(-1000, 1000) / 1000.0);
-            }
-            else
-            {
-                // get test data here, request from serial
-                xBatch(r, c) = float(random(-2000, 2000) / 1000.0);
-            }
-        }
+void updateXBatch(bool trainingData) {
+  for (int r = 0; r < xBatch.Rows; r++) {
+    for (int c = 0; c < xBatch.Cols; c++) {
+      if (trainingData) {
+        // get training data here, request from serial
+        xBatch(r, c) = float(random(-1000, 1000) / 1000.0);
+      } else {
+        // get test data here, request from serial
+        xBatch(r, c) = float(random(-2000, 2000) / 1000.0);
+      }
     }
+  }
 }
 
 /*
 do one forward and backward pass.
 returns the reconsturction error
 */
-float iterate(BLA::Matrix<in1, batch_size> x)
-{
-    float loss;
+float iterate(BLA::Matrix<in1, batch_size> x) {
+  float loss;
 
-    // forward
-    h1 = lin1.forward(x);
-    h1 = rel1.forward(h1);
+  // forward
+  h1 = lin1.forward(x);
+  h1 = rel1.forward(h1);
 
-    h2 = lin2.forward(h1);
-    h2 = rel2.forward(h2);
+  h2 = lin2.forward(h1);
+  h2 = rel2.forward(h2);
 
-    h3 = lin3.forward(h2);
-    h3 = rel3.forward(h3);
+  h3 = lin3.forward(h2);
+  h3 = rel3.forward(h3);
 
-    h4 = lin4.forward(h3);
-    h4 = rel4.forward(h4);
+  h4 = lin4.forward(h3);
+  h4 = rel4.forward(h4);
 
-    // loss
-    loss = sq.forward(x, h4);
-    dLdY4 = sq.backward(x, h4);
+  // loss
+  loss = sq.forward(x, h4);
+  dLdY4 = sq.backward(x, h4);
 
-    // backward & gradient descent
-    dLdY4 = rel4.backward(dLdY4);
-    // dLdW4 = lin4.gradWeights(dLdY4);
-    // dLdb4 = lin4.gradBias(dLdY4);
-    dLdW4 *= momentum;
-    dLdW4 += (lin4.gradWeights(dLdY4) * (1 - momentum));
-    dLdb4 *= momentum;
-    dLdb4 += (lin4.gradBias(dLdY4) * (1 - momentum));
-    lin4.weights -= dLdW4 * learning_rate;
-    lin4.bias -= dLdb4 * learning_rate;
-    dLdY3 = lin4.backward(dLdY4);
+  // backward & gradient descent
+  dLdY4 = rel4.backward(dLdY4);
+  // dLdW4 = lin4.gradWeights(dLdY4);
+  // dLdb4 = lin4.gradBias(dLdY4);
+  dLdW4 *= momentum;
+  dLdW4 += (lin4.gradWeights(dLdY4) * (1 - momentum));
+  dLdb4 *= momentum;
+  dLdb4 += (lin4.gradBias(dLdY4) * (1 - momentum));
+  lin4.weights -= dLdW4 * learning_rate;
+  lin4.bias -= dLdb4 * learning_rate;
+  dLdY3 = lin4.backward(dLdY4);
 
-    dLdY3 = rel3.backward(dLdY3);
-    // dLdW3 = lin3.gradWeights(dLdY3);
-    // dLdb3 = lin3.gradBias(dLdY3);
-    dLdW3 *= momentum;
-    dLdW3 += (lin3.gradWeights(dLdY3) * (1 - momentum));
-    dLdb3 *= momentum;
-    dLdb3 += (lin3.gradBias(dLdY3) * (1 - momentum));
-    lin3.weights -= dLdW3 * learning_rate;
-    lin3.bias -= dLdb3 * learning_rate;
-    dLdY2 = lin3.backward(dLdY3);
+  dLdY3 = rel3.backward(dLdY3);
+  // dLdW3 = lin3.gradWeights(dLdY3);
+  // dLdb3 = lin3.gradBias(dLdY3);
+  dLdW3 *= momentum;
+  dLdW3 += (lin3.gradWeights(dLdY3) * (1 - momentum));
+  dLdb3 *= momentum;
+  dLdb3 += (lin3.gradBias(dLdY3) * (1 - momentum));
+  lin3.weights -= dLdW3 * learning_rate;
+  lin3.bias -= dLdb3 * learning_rate;
+  dLdY2 = lin3.backward(dLdY3);
 
-    dLdY2 = rel2.backward(dLdY2);
-    // dLdW2 = lin2.gradWeights(dLdY2);
-    // dLdb2 = lin2.gradBias(dLdY2);
-    dLdW2 *= momentum;
-    dLdW2 += (lin2.gradWeights(dLdY2) * (1 - momentum));
-    dLdb2 *= momentum;
-    dLdb2 += (lin2.gradBias(dLdY2) * (1 - momentum));
-    lin2.weights -= dLdW2 * learning_rate;
-    lin2.bias -= dLdb2 * learning_rate;
-    dLdY1 = lin2.backward(dLdY2);
+  dLdY2 = rel2.backward(dLdY2);
+  // dLdW2 = lin2.gradWeights(dLdY2);
+  // dLdb2 = lin2.gradBias(dLdY2);
+  dLdW2 *= momentum;
+  dLdW2 += (lin2.gradWeights(dLdY2) * (1 - momentum));
+  dLdb2 *= momentum;
+  dLdb2 += (lin2.gradBias(dLdY2) * (1 - momentum));
+  lin2.weights -= dLdW2 * learning_rate;
+  lin2.bias -= dLdb2 * learning_rate;
+  dLdY1 = lin2.backward(dLdY2);
 
-    dLdY1 = rel1.backward(dLdY1);
-    // dLdW1 = lin1.gradWeights(dLdY1);
-    // dLdb1 = lin1.gradBias(dLdY1);
-    dLdW1 *= momentum;
-    dLdW1 += (lin1.gradWeights(dLdY1) * (1 - momentum));
-    dLdb1 *= momentum;
-    dLdb1 += (lin1.gradBias(dLdY1) * (1 - momentum));
-    lin1.weights -= dLdW1 * learning_rate;
-    lin1.bias -= dLdb1 * learning_rate;
+  dLdY1 = rel1.backward(dLdY1);
+  // dLdW1 = lin1.gradWeights(dLdY1);
+  // dLdb1 = lin1.gradBias(dLdY1);
+  dLdW1 *= momentum;
+  dLdW1 += (lin1.gradWeights(dLdY1) * (1 - momentum));
+  dLdb1 *= momentum;
+  dLdb1 += (lin1.gradBias(dLdY1) * (1 - momentum));
+  lin1.weights -= dLdW1 * learning_rate;
+  lin1.bias -= dLdb1 * learning_rate;
 
-    return loss;
+  return loss;
 }
 
-void initialize()
-{
-    xBatch.Fill(0.0);
+void initialize() {
+  xBatch.Fill(0.0);
 
-    h1.Fill(0.0);
-    h2.Fill(0.0);
-    h3.Fill(0.0);
-    h4.Fill(0.0);
+  h1.Fill(0.0);
+  h2.Fill(0.0);
+  h3.Fill(0.0);
+  h4.Fill(0.0);
 
-    dLdY1.Fill(0.0);
-    dLdY2.Fill(0.0);
-    dLdY3.Fill(0.0);
-    dLdY4.Fill(0.0);
+  dLdY1.Fill(0.0);
+  dLdY2.Fill(0.0);
+  dLdY3.Fill(0.0);
+  dLdY4.Fill(0.0);
 
-    dLdX1.Fill(0.0);
-    dLdX2.Fill(0.0);
-    dLdX3.Fill(0.0);
-    dLdX4.Fill(0.0);
+  dLdX1.Fill(0.0);
+  dLdX2.Fill(0.0);
+  dLdX3.Fill(0.0);
+  dLdX4.Fill(0.0);
 
-    dLdW1.Fill(0.0);
-    dLdW2.Fill(0.0);
-    dLdW3.Fill(0.0);
-    dLdW4.Fill(0.0);
+  dLdW1.Fill(0.0);
+  dLdW2.Fill(0.0);
+  dLdW3.Fill(0.0);
+  dLdW4.Fill(0.0);
 
-    dLdb1.Fill(0.0);
-    dLdb2.Fill(0.0);
-    dLdb3.Fill(0.0);
-    dLdb4.Fill(0.0);
+  dLdb1.Fill(0.0);
+  dLdb2.Fill(0.0);
+  dLdb3.Fill(0.0);
+  dLdb4.Fill(0.0);
 }
 
-void train()
-{
-    float loss;
-    // training
-    for (int epoch = 0; epoch < NUM_EPOCHS; epoch++)
-    {
-        loss = 0.0;
-        for (int iter = 0; iter < NUM_ITERS; iter++)
-        {
-            updateXBatch(true);
-            loss += iterate(xBatch);
-        }
-        loss /= NUM_ITERS;
-        LOG_SHORT(LOG_INFO, "epoch: %d | loss: %f", epoch, loss);
+void train() {
+  float loss;
+  // training
+  for (int epoch = 0; epoch < NUM_EPOCHS; epoch++) {
+    loss = 0.0;
+    for (int iter = 0; iter < NUM_ITERS; iter++) {
+      updateXBatch(true);
+      loss += iterate(xBatch);
+    }
+    loss /= NUM_ITERS;
+    LOG_SHORT(LOG_INFO, "epoch: %d | loss: %f", epoch, loss);
+  }
+
+  // testing
+  updateXBatch(true);
+  loss = iterate(xBatch);
+  LOG_SHORT(LOG_INFO, "train sample: %f", loss);
+
+  updateXBatch(false);
+  loss = iterate(xBatch);
+
+  LOG_SHORT(LOG_INFO, "test sample: %f", loss);
+}
+
+void blePeripheralConnectHandler(BLEDevice central) {
+  // central connected event handler
+  Serial.print("Connected event, central: ");
+  Serial.println(central.address());
+  BLE.advertise();
+}
+
+void blePeripheralDisconnectHandler(BLEDevice central) {
+  // central disconnected event handler
+  Serial.print("Disconnected event, central: ");
+  Serial.println(central.address());
+  BLE.advertise();
+  sendFlag = true;
+}
+
+void sendWeightsBatch() {
+  // if layerIndex == 2){
+  //   OFFSET = OUT2 
+  // }
+  if (layerIndex == 1) {
+    sendWeightsBuffer.layerIndex = layerIndex;
+    sendWeightsBuffer.rowIndex = rowIndex;
+    sendWeightsBuffer.colIndex = colIndex;
+    lin1.copyWeightsFromBuffer(rowIndex, colIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+    readCharacteristic.writeValue((byte *)&sendWeightsBuffer, sizeof(sendWeightsBuffer));
+    Serial.println("sent");
+    Serial.println(sendWeightsBuffer.weights[0]);
+    Serial.println(sendWeightsBuffer.weights[BLE_NUM_WEIGHTS - 1]);
+    Serial.println(rowIndex);
+    Serial.println(colIndex);
+    
+    colIndex += BLE_NUM_WEIGHTS;
+
+    if (colIndex > in1) {
+      rowIndex += 1;
+      colIndex = 0;
     }
 
-    // testing
-    updateXBatch(true);
-    loss = iterate(xBatch);
-    LOG_SHORT(LOG_INFO, "train sample: %f", loss);
-
-    updateXBatch(false);
-    loss = iterate(xBatch);
-
-    LOG_SHORT(LOG_INFO, "test sample: %f", loss);
-}
-
-void blePeripheralConnectHandler(BLEDevice central)
-{
-    // central connected event handler
-    Serial.print("Connected event, central: ");
-    Serial.println(central.address());
-    BLE.advertise();
-}
-
-void blePeripheralDisconnectHandler(BLEDevice central)
-{
-    // central disconnected event handler
-    Serial.print("Disconnected event, central: ");
-    Serial.println(central.address());
-    BLE.advertise();
-    sendFlag = true;
-}
-
-void sendWeights()
-{
-    // lin1
-    weightsBuffer.layerIndex = 1;
-    for (int rowIndex = 0; rowIndex < out1; rowIndex++)
-    {
-        weightsBuffer.rowIndex = rowIndex;
-        lin1.copyWeightsToBuffer(rowIndex, weightsBuffer.weights, BLE_NUM_WEIGHTS);
-        // send
-        readCharacteristic.writeValue((byte *)&weightsBuffer, sizeof(weightsBuffer));
+    if (rowIndex > out1) {
+      rowIndex = 0;
+      // layerIndex += 1;
+      colIndex = 0;
     }
+  }
+}
+
+void receiveWeightsBatch() {
+  writeCharacteristic.readValue((byte *)&receiveWeightsBuffer, sizeof(receiveWeightsBuffer));
+  int layerIndex = receiveWeightsBuffer.layerIndex;
+  int rowIndex = receiveWeightsBuffer.rowIndex;
+  int colIndex = receiveWeightsBuffer.colIndex;
+  lin1.copyWeightsToBuffer(rowIndex, colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+  Serial.println("received");
+  Serial.println(receiveWeightsBuffer.weights[0]);
+  Serial.println(receiveWeightsBuffer.weights[BLE_NUM_WEIGHTS - 1]);
+  Serial.println(rowIndex);
+  Serial.println(colIndex);
+}
+
+void sendWeights() {
+  // readCharacteristic.writeValue((byte *) &temp1, sizeof(temp1));
+  // Serial.println("sent");
+
+  /*
+  sendWeightsBuffer.layerIndex = 1;
+  for (int rowIndex = 0; rowIndex < out1; rowIndex++) {
+    sendWeightsBuffer.rowIndex = rowIndex;
+    lin1.copyWeightsToBuffer(rowIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+    readCharacteristic.writeValue((byte *)&sendWeightsBuffer, sizeof(sendWeightsBuffer));
+    Serial.println("sending");
+    Serial.println(rowIndex);
+    Serial.println(sendWeightsBuffer.weights[0], 4);
+    Serial.println(sendWeightsBuffer.weights[BLE_NUM_WEIGHTS-1], 4);
+    delay(100);
+    // break;
+  }
     weightsBuffer.rowIndex = -1;
     lin1.copyBiasToBuffer(weightsBuffer.weights, BLE_NUM_WEIGHTS);
     // send
@@ -309,90 +362,149 @@ void sendWeights()
     weightsBuffer.rowIndex = -1;
     lin4.copyBiasToBuffer(weightsBuffer.weights, BLE_NUM_WEIGHTS);
     readCharacteristic.writeValue((byte *)&weightsBuffer, sizeof(weightsBuffer));
+    */
 }
 
-void setup()
-{
-    // Setup the board's status indicators
-    PINMODE(LEDR, OUTPUT);
-    PINMODE(LEDG, OUTPUT);
-    PINMODE(LEDB, OUTPUT);
-    PINMODE(LED_PWR, OUTPUT);
-    DWRITE(LEDR, 1);
-    DWRITE(LEDG, 1);
-    DWRITE(LEDB, 1);
-    DWRITE(LED_PWR, 0);
+void receiveWeights() {
+  // writeCharacteristic.readValue((byte *) &temp2, sizeof(temp2));
+  // Serial.println("received");
 
-    // Initialize serial port
-    SP.initialize(BAUD_RATE, 1000);
+  // Serial.println(temp2.weights[0]);
+  // Serial.println(temp2.weights[4]);
 
-    // Setup logging
-    set_log_lvl(LOG_LEVEL);
-    toggle_logs(true);
+  /*
+  receiveWeightsBuffer.layerIndex = 1;
+  for (int rowIndex = 0; rowIndex < out1; rowIndex++) {
+    receiveWeightsBuffer.rowIndex = rowIndex;
+    lin1.copyWeightsFromBuffer(rowIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+    writeCharacteristic.readValue((byte *)&receiveWeightsBuffer, sizeof(receiveWeightsBuffer));
+    Serial.println("received");
+    Serial.println(receiveWeightsBuffer.rowIndex);
+    Serial.println(receiveWeightsBuffer.weights[0], 4);
+    Serial.println(receiveWeightsBuffer.weights[BLE_NUM_WEIGHTS-1], 4);
+    break;
+  }
 
-    // Wait on the serial and notify user
-    DWRITE(LEDB, 0);
-    SP.blocking_wait(0);
-    DWRITE(LEDB, 1);
+  weightsBuffer.rowIndex = -1;
+  lin1.copyBiasFromBuffer(weightsBuffer.weights, BLE_NUM_WEIGHTS);
+  // send
+  writeCharacteristic.readValue((byte *)&weightsBuffer, sizeof(weightsBuffer));
 
-    // Greet the user and present hardware info
-    LOG_SHORT(LOG_INFO, "Railway Anomaly Detection System v%s", FW_VERSION);
+  weightsBuffer.layerIndex = 2;
+  for (int rowIndex = 0; rowIndex < out2; rowIndex++) {
+    weightsBuffer.rowIndex = rowIndex;
+    lin2.copyWeightsFromBuffer(rowIndex, weightsBuffer.weights, BLE_NUM_WEIGHTS);
+    writeCharacteristic.readValue((byte *)&weightsBuffer, sizeof(weightsBuffer));
+  }
+  weightsBuffer.rowIndex = -1;
+  lin2.copyBiasFromBuffer(weightsBuffer.weights, BLE_NUM_WEIGHTS);
+  writeCharacteristic.readValue((byte *)&weightsBuffer, sizeof(weightsBuffer));
 
-    // Tell the user we completed setup
-    DWRITE(LED_PWR, 1);
+  weightsBuffer.layerIndex = 3;
+  for (int rowIndex = 0; rowIndex < out3; rowIndex++) {
+    weightsBuffer.rowIndex = rowIndex;
+    lin3.copyWeightsFromBuffer(rowIndex, weightsBuffer.weights, BLE_NUM_WEIGHTS);
+    writeCharacteristic.readValue((byte *)&weightsBuffer, sizeof(weightsBuffer));
+  }
+  weightsBuffer.rowIndex = -1;
+  lin3.copyBiasFromBuffer(weightsBuffer.weights, BLE_NUM_WEIGHTS);
+  writeCharacteristic.readValue((byte *)&weightsBuffer, sizeof(weightsBuffer));
 
-    // BLE initialization
-    // begin initialization
-    if (!BLE.begin())
-    {
-        Serial.println("starting Bluetooth® Low Energy module failed!");
-
-        while (1)
-            ;
-    }
-
-    // set advertised local name and service UUID:
-    BLE.setLocalName("sender");
-    BLE.setAdvertisedService(networkService);
-
-    // add the characteristic to the service
-    networkService.addCharacteristic(readCharacteristic);
-    networkService.addCharacteristic(writeCharacteristic);
-
-    // add service
-    BLE.addService(networkService);
-
-    BLE.setEventHandler(BLEConnected, blePeripheralConnectHandler);
-    BLE.setEventHandler(BLEDisconnected, blePeripheralDisconnectHandler);
-
-    // set the initial value for the characeristic:
-    // readCharacteristic.writeValue(byteArray, byteArraySize);
-    sendWeights();
-
-    // start advertising
-    BLE.advertise();
-
-    Serial.println("i am the sender...");
-
-    // Do stuff
-    initialize();
+  weightsBuffer.layerIndex = 4;
+  for (int rowIndex = 0; rowIndex < out4; rowIndex++) {
+    weightsBuffer.rowIndex = rowIndex;
+    lin4.copyWeightsFromBuffer(rowIndex, weightsBuffer.weights, BLE_NUM_WEIGHTS);
+    writeCharacteristic.writeValue((byte *)&weightsBuffer, sizeof(weightsBuffer));
+  }
+  weightsBuffer.rowIndex = -1;
+  lin4.copyBiasFromBuffer(weightsBuffer.weights, BLE_NUM_WEIGHTS);
+  writeCharacteristic.readValue((byte *)&weightsBuffer, sizeof(weightsBuffer));
+  */
 }
 
-void loop()
-{
-    BLE.poll();
-    if (sendFlag)
-    {
-        sendWeights();
-        Serial.println("sending weights");
-    }
+void setup() {
+  // Setup the board's status indicators
+  PINMODE(LEDR, OUTPUT);
+  PINMODE(LEDG, OUTPUT);
+  PINMODE(LEDB, OUTPUT);
+  PINMODE(LED_PWR, OUTPUT);
+  DWRITE(LEDR, 1);
+  DWRITE(LEDG, 1);
+  DWRITE(LEDB, 1);
+  DWRITE(LED_PWR, 0);
 
-    if (writeCharacteristic.written())
-    {
-        sendFlag = false;
-        writeCharacteristic.readValue((byte *)&weightsBuffer, sizeof(weightsBuffer));
+  // Initialize serial port
+  SP.initialize(BAUD_RATE, 1000);
 
-        readCharacteristic.writeValue((byte *)&weightsBuffer, sizeof(weightsBuffer));
-    }
-    train();
+  // Setup logging
+  set_log_lvl(LOG_LEVEL);
+  toggle_logs(true);
+
+  // Wait on the serial and notify user
+  DWRITE(LEDB, 0);
+  SP.blocking_wait(0);
+  DWRITE(LEDB, 1);
+
+  // Greet the user and present hardware info
+  LOG_SHORT(LOG_INFO, "Railway Anomaly Detection System v%s", FW_VERSION);
+
+  // Tell the user we completed setup
+  DWRITE(LED_PWR, 1);
+
+  // BLE initialization
+  // begin initialization
+  if (!BLE.begin()) {
+    Serial.println("starting Bluetooth® Low Energy module failed!");
+
+    while (1)
+      ;
+  }
+
+  // set advertised local name and service UUID:
+  BLE.setLocalName("sender");
+  BLE.setAdvertisedService(networkService);
+
+  // add the characteristic to the service
+  networkService.addCharacteristic(readCharacteristic);
+  networkService.addCharacteristic(writeCharacteristic);
+
+  // add service
+  BLE.addService(networkService);
+
+  BLE.setEventHandler(BLEConnected, blePeripheralConnectHandler);
+  BLE.setEventHandler(BLEDisconnected, blePeripheralDisconnectHandler);
+
+  // set the initial value for the characeristic:
+  // readCharacteristic.writeValue(byteArray, byteArraySize);
+  // sendWeights();
+  sendWeightsBatch();
+
+  // start advertising
+  BLE.advertise();
+
+  Serial.println("i am the sender...");
+
+  // Do stuff
+  initialize();
+}
+
+void loop() {
+  BLE.poll(1000);
+  if (sendFlag) {
+    // sendWeights();
+    sendWeightsBatch();
+    Serial.println("sending weights");
+    // sendFlag = false;
+  }
+
+  if (writeCharacteristic.written()) {
+    Serial.print("sending batch: ");
+    sendFlag = false;
+    // receiveWeights();
+    receiveWeightsBatch();
+    // sendWeights();
+    sendWeightsBatch();
+  }
+  // train();
+  // delay(5000);
 }
