@@ -70,6 +70,9 @@ const int out3 = 10;
 const int in4 = 10;
 const int out4 = FEATURE_DIM;
 
+const int inputLayersSizes[] = { in1, in2, in3, in4 };
+const int outputLayersSizes[] = { out1, out2, out3, out4 };
+
 LinearLayer<in1, out1, batch_size> lin1;
 ReLULayer<out1, batch_size> rel1;
 
@@ -279,49 +282,75 @@ void sendSyncFlag() {
 void sendWeightsBatch() {
   sendWeightsBuffer.syncFlag = false;
 
-  // if layerIndex == 2){
-  //   OFFSET = OUT2
-  // }
+  colIndex += BLE_NUM_WEIGHTS;
 
-  if (layerIndex == 1) {
-    colIndex += BLE_NUM_WEIGHTS;
-
-    if (colIndex >= in1) {
-      rowIndex += 1;
-      colIndex = 0;
-    }
-
-    if (rowIndex >= out1) {
-      rowIndex = 0;
-      // layerIndex += 1;
-      colIndex = 0;
-    }
-
-    sendWeightsBuffer.layerIndex = layerIndex;
-    sendWeightsBuffer.rowIndex = rowIndex;
-    sendWeightsBuffer.colIndex = colIndex;
-    lin1.copyWeightsToBuffer(rowIndex, colIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
-    readCharacteristic.writeValue((byte *)&sendWeightsBuffer, sizeof(sendWeightsBuffer));
-    Serial.println("sent");
-    Serial.println(sendWeightsBuffer.weights[0]);
-    Serial.println(sendWeightsBuffer.weights[BLE_NUM_WEIGHTS - 1]);
-    Serial.println(rowIndex);
-    Serial.println(colIndex);
-
+  if (colIndex >= inputLayersSizes[layerIndex - 1]) {
+    rowIndex += 1;
+    colIndex = 0;
   }
+
+  if (rowIndex >= outputLayersSizes[layerIndex - 1]) {
+    rowIndex = 0;
+    layerIndex += 1;
+    if (layerIndex >= 5) {
+      layerIndex = 1;
+    }
+    colIndex = 0;
+  }
+
+  switch (layerIndex) {
+    case 1:
+      lin1.copyWeightsToBuffer(rowIndex, colIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+      break;
+    case 2:
+      lin2.copyWeightsToBuffer(rowIndex, colIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+      break;
+    case 3:
+      lin3.copyWeightsToBuffer(rowIndex, colIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+      break;
+    case 4:
+      lin4.copyWeightsToBuffer(rowIndex, colIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+      break;
+  }
+
+  sendWeightsBuffer.layerIndex = layerIndex;
+  sendWeightsBuffer.rowIndex = rowIndex;
+  sendWeightsBuffer.colIndex = colIndex;
+  readCharacteristic.writeValue((byte *)&sendWeightsBuffer, sizeof(sendWeightsBuffer));
+  Serial.println("sent");
+  Serial.print("layer: "); Serial.println(layerIndex);
+  Serial.print("row: "); Serial.println(rowIndex);
+  Serial.print("col: "); Serial.println(colIndex);
+  Serial.println("-----");
 }
 
 void receiveWeightsBatch() {
   writeCharacteristic.readValue((byte *)&receiveWeightsBuffer, sizeof(receiveWeightsBuffer));
+
   int layerIndex = receiveWeightsBuffer.layerIndex;
   int rowIndex = receiveWeightsBuffer.rowIndex;
   int colIndex = receiveWeightsBuffer.colIndex;
-  lin1.copyWeightsFromBuffer(rowIndex, colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+
+  switch (layerIndex) {
+    case 1:
+      lin1.copyWeightsFromBuffer(rowIndex, colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+      break;
+    case 2:
+      lin2.copyWeightsFromBuffer(rowIndex, colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+      break;
+    case 3:
+      lin3.copyWeightsFromBuffer(rowIndex, colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+      break;
+    case 4:
+      lin4.copyWeightsFromBuffer(rowIndex, colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+      break;
+  }
+
   Serial.println("received");
-  Serial.println(receiveWeightsBuffer.weights[0]);
-  Serial.println(receiveWeightsBuffer.weights[BLE_NUM_WEIGHTS - 1]);
-  Serial.println(rowIndex);
-  Serial.println(colIndex);
+  Serial.print("layer: "); Serial.println(layerIndex);
+  Serial.print("row: "); Serial.println(rowIndex);
+  Serial.print("col: "); Serial.println(colIndex);
+  Serial.println("-----");
 }
 
 void receiveWeightsBatchAvg() {
@@ -329,8 +358,6 @@ void receiveWeightsBatchAvg() {
   int layerIndex = receiveWeightsBuffer.layerIndex;
   int rowIndex = receiveWeightsBuffer.rowIndex;
   int colIndex = receiveWeightsBuffer.colIndex;
-
-  //lin1.copyWeightsFromBufferAvg(rowIndex, colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
 
   lin1.copyWeightsToBuffer(rowIndex, colIndex, avgWeightsBuffer, BLE_NUM_WEIGHTS);
   for (int i = 0; i < BLE_NUM_WEIGHTS; i++) {
@@ -343,120 +370,6 @@ void receiveWeightsBatchAvg() {
   Serial.println(receiveWeightsBuffer.weights[BLE_NUM_WEIGHTS - 1]);
   Serial.println(rowIndex);
   Serial.println(colIndex);
-}
-
-void sendWeights() {
-  // readCharacteristic.writeValue((byte *) &temp1, sizeof(temp1));
-  // Serial.println("sent");
-
-  /*
-  sendWeightsBuffer.layerIndex = 1;
-  for (int rowIndex = 0; rowIndex < out1; rowIndex++) {
-    sendWeightsBuffer.rowIndex = rowIndex;
-    lin1.copyWeightsToBuffer(rowIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
-    readCharacteristic.writeValue((byte *)&sendWeightsBuffer, sizeof(sendWeightsBuffer));
-    Serial.println("sending");
-    Serial.println(rowIndex);
-    Serial.println(sendWeightsBuffer.weights[0], 4);
-    Serial.println(sendWeightsBuffer.weights[BLE_NUM_WEIGHTS-1], 4);
-    delay(100);
-    // break;
-  }
-    weightsBuffer.rowIndex = -1;
-    lin1.copyBiasToBuffer(weightsBuffer.weights, BLE_NUM_WEIGHTS);
-    // send
-    readCharacteristic.writeValue((byte *)&weightsBuffer, sizeof(weightsBuffer));
-
-    weightsBuffer.layerIndex = 2;
-    for (int rowIndex = 0; rowIndex < out2; rowIndex++)
-    {
-        weightsBuffer.rowIndex = rowIndex;
-        lin2.copyWeightsToBuffer(rowIndex, weightsBuffer.weights, BLE_NUM_WEIGHTS);
-        readCharacteristic.writeValue((byte *)&weightsBuffer, sizeof(weightsBuffer));
-    }
-    weightsBuffer.rowIndex = -1;
-    lin2.copyBiasToBuffer(weightsBuffer.weights, BLE_NUM_WEIGHTS);
-    readCharacteristic.writeValue((byte *)&weightsBuffer, sizeof(weightsBuffer));
-
-    weightsBuffer.layerIndex = 3;
-    for (int rowIndex = 0; rowIndex < out3; rowIndex++)
-    {
-        weightsBuffer.rowIndex = rowIndex;
-        lin3.copyWeightsToBuffer(rowIndex, weightsBuffer.weights, BLE_NUM_WEIGHTS);
-        readCharacteristic.writeValue((byte *)&weightsBuffer, sizeof(weightsBuffer));
-    }
-    weightsBuffer.rowIndex = -1;
-    lin3.copyBiasToBuffer(weightsBuffer.weights, BLE_NUM_WEIGHTS);
-    readCharacteristic.writeValue((byte *)&weightsBuffer, sizeof(weightsBuffer));
-
-    weightsBuffer.layerIndex = 4;
-    for (int rowIndex = 0; rowIndex < out4; rowIndex++)
-    {
-        weightsBuffer.rowIndex = rowIndex;
-        lin4.copyWeightsToBuffer(rowIndex, weightsBuffer.weights, BLE_NUM_WEIGHTS);
-        readCharacteristic.writeValue((byte *)&weightsBuffer, sizeof(weightsBuffer));
-    }
-    weightsBuffer.rowIndex = -1;
-    lin4.copyBiasToBuffer(weightsBuffer.weights, BLE_NUM_WEIGHTS);
-    readCharacteristic.writeValue((byte *)&weightsBuffer, sizeof(weightsBuffer));
-    */
-}
-
-void receiveWeights() {
-  // writeCharacteristic.readValue((byte *) &temp2, sizeof(temp2));
-  // Serial.println("received");
-
-  // Serial.println(temp2.weights[0]);
-  // Serial.println(temp2.weights[4]);
-
-  /*
-  receiveWeightsBuffer.layerIndex = 1;
-  for (int rowIndex = 0; rowIndex < out1; rowIndex++) {
-    receiveWeightsBuffer.rowIndex = rowIndex;
-    lin1.copyWeightsFromBuffer(rowIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
-    writeCharacteristic.readValue((byte *)&receiveWeightsBuffer, sizeof(receiveWeightsBuffer));
-    Serial.println("received");
-    Serial.println(receiveWeightsBuffer.rowIndex);
-    Serial.println(receiveWeightsBuffer.weights[0], 4);
-    Serial.println(receiveWeightsBuffer.weights[BLE_NUM_WEIGHTS-1], 4);
-    break;
-  }
-
-  weightsBuffer.rowIndex = -1;
-  lin1.copyBiasFromBuffer(weightsBuffer.weights, BLE_NUM_WEIGHTS);
-  // send
-  writeCharacteristic.readValue((byte *)&weightsBuffer, sizeof(weightsBuffer));
-
-  weightsBuffer.layerIndex = 2;
-  for (int rowIndex = 0; rowIndex < out2; rowIndex++) {
-    weightsBuffer.rowIndex = rowIndex;
-    lin2.copyWeightsFromBuffer(rowIndex, weightsBuffer.weights, BLE_NUM_WEIGHTS);
-    writeCharacteristic.readValue((byte *)&weightsBuffer, sizeof(weightsBuffer));
-  }
-  weightsBuffer.rowIndex = -1;
-  lin2.copyBiasFromBuffer(weightsBuffer.weights, BLE_NUM_WEIGHTS);
-  writeCharacteristic.readValue((byte *)&weightsBuffer, sizeof(weightsBuffer));
-
-  weightsBuffer.layerIndex = 3;
-  for (int rowIndex = 0; rowIndex < out3; rowIndex++) {
-    weightsBuffer.rowIndex = rowIndex;
-    lin3.copyWeightsFromBuffer(rowIndex, weightsBuffer.weights, BLE_NUM_WEIGHTS);
-    writeCharacteristic.readValue((byte *)&weightsBuffer, sizeof(weightsBuffer));
-  }
-  weightsBuffer.rowIndex = -1;
-  lin3.copyBiasFromBuffer(weightsBuffer.weights, BLE_NUM_WEIGHTS);
-  writeCharacteristic.readValue((byte *)&weightsBuffer, sizeof(weightsBuffer));
-
-  weightsBuffer.layerIndex = 4;
-  for (int rowIndex = 0; rowIndex < out4; rowIndex++) {
-    weightsBuffer.rowIndex = rowIndex;
-    lin4.copyWeightsFromBuffer(rowIndex, weightsBuffer.weights, BLE_NUM_WEIGHTS);
-    writeCharacteristic.writeValue((byte *)&weightsBuffer, sizeof(weightsBuffer));
-  }
-  weightsBuffer.rowIndex = -1;
-  lin4.copyBiasFromBuffer(weightsBuffer.weights, BLE_NUM_WEIGHTS);
-  writeCharacteristic.readValue((byte *)&weightsBuffer, sizeof(weightsBuffer));
-  */
 }
 
 void setup() {
@@ -514,9 +427,6 @@ void setup() {
   BLE.setEventHandler(BLEDisconnected, blePeripheralDisconnectHandler);
 
   // set the initial value for the characeristic:
-  // readCharacteristic.writeValue(byteArray, byteArraySize);
-  // sendWeights();
-  // sendWeightsBatch();
   sendSyncFlag();
 
   // start advertising
