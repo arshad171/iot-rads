@@ -1,17 +1,26 @@
 #include "src/utils/common.h"
 #include "src/camera/camera.h"
 #include "src/dnn/network.h"
+#include "src/communication/protocol.h"
 
 // Platform settings
 #include "settings/device.h"
 
-// External libraries
-#include<Arduino_OV767X.h>
+// Interrupt signals
+volatile static bool acquireImage = false;
+
+// Interrupt handlers
+void handleShutterButton() {
+    acquireImage = true;
+}
 
 void setup() {
     // Setup the board's status indicators
     PINMODE(LEDR,OUTPUT); PINMODE(LEDG,OUTPUT); PINMODE(LEDB,OUTPUT); PINMODE(LED_PWR,OUTPUT);
     DWRITE(LEDR,1); DWRITE(LEDG,1); DWRITE(LEDB,1); DWRITE(LED_PWR,0);
+
+    // Setup PIN 13 (The PushButton) to input
+    PINMODE(D13,INPUT_PULLUP);
 
     // Initialize serial port
     SP.initialize(BAUD_RATE,1000);
@@ -28,6 +37,12 @@ void setup() {
     // Greet the user and present hardware info
     LOG_SHORT(LOG_INFO,"Railway Anomaly Detection System v%s",FW_VERSION);
 
+    // Setup camera
+    camera_init(CAMERA_MODE,CAMERA_COLOR,CAMERA_FPS);
+
+    // Setup interrupts
+    attachInterrupt(digitalPinToInterrupt(D13),&handleShutterButton,FALLING);
+
     // Tell the user we completed setup
     DWRITE(LED_PWR,1);
 
@@ -37,4 +52,15 @@ void setup() {
 
 void loop(){
     train();
+
+    if(acquireImage) {
+        LOG_SHORT(LOG_DEBUG,"Acquiring image...");
+        RichImage *image = get_image();
+        pack((byte *) image,getRichImageSize(image),DType::IMG,Cmd::SET_FRAME,&SP);
+        free(image);
+
+        // Reset the handler
+        acquireImage = false;
+        attachInterrupt(digitalPinToInterrupt(D13),&handleShutterButton,FALLING);
+    }
 }
