@@ -126,15 +126,20 @@ public:
     }
   }
 
-  void copyWeightsFromBufferAvg(int rowIndex, int colIndex, float *buffer, int size) {
-      for (int c = 0; (c < size) && (c < TinputSize); c++) {
-        this->weights(rowIndex, c + colIndex) = 0.5 * (buffer[c] + this->weights(rowIndex, c + colIndex));
-      }
-  }
+  // void copyWeightsFromBufferAvg(int rowIndex, int colIndex, float *buffer, int size) {
+  //   Serial.println("---");
+  //     for (int c = 0; (c < size) && (c < TinputSize); c++) {
+  //       // this->weights(rowIndex, c + colIndex) = 0.5 * (buffer[c] + this->weights(rowIndex, c + colIndex));
+  //       float temp = this->weights(rowIndex, c + colIndex) + buffer[c];
+  //       Serial.println(c);
+  //       Serial.println(temp);
+  //       this->weights(rowIndex, c + colIndex) = buffer[c];
+  //     }
+  // }
 
-  void copyBiasFromBufferAvg(int colIndex, float *buffer, int size) {
-    for (int r = 0; (r < size) && (r < ToutputSize); r++) {
-      this->bias(r + colIndex, 1) = 0.5 * (buffer[r] + this->bias(r + colIndex, 1));
-    }
-  }
+  // void copyBiasFromBufferAvg(int colIndex, float *buffer, int size) {
+  //   for (int r = 0; (r < size) && (r < ToutputSize); r++) {
+  //     this->bias(r + colIndex, 1) = 0.5 * (buffer[r] + this->bias(r + colIndex, 1));
+  //   }
+  // }
 };
