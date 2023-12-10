@@ -282,12 +282,12 @@ void sendWeightsBatch() {
     
     colIndex += BLE_NUM_WEIGHTS;
 
-    if (colIndex > in1) {
+    if (colIndex >= in1) {
       rowIndex += 1;
       colIndex = 0;
     }
 
-    if (rowIndex > out1) {
+    if (rowIndex >= out1) {
       rowIndex = 0;
       // layerIndex += 1;
       colIndex = 0;
@@ -502,6 +502,10 @@ void loop() {
     sendFlag = false;
     // receiveWeights();
     receiveWeightsBatch();
+
+    if(receiveWeightsBuffer.syncFlag) {
+
+    }
     // sendWeights();
     sendWeightsBatch();
   }
