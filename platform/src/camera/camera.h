@@ -1,4 +1,4 @@
-#include "../utils/common.h"
+#include "../utils/types.h"
 
 void camera_init(int res,int color,int fps);
-byte *get_image();
+RichImage *get_image();
