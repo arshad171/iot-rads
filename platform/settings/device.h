@@ -1,3 +1,5 @@
+#include <Arduino_OV767X.h>
+
 // Device information (include experiment name)
 #define FW_VERSION "0.0.1-Platform-Beta"
 
@@ -7,5 +9,5 @@
 
 // Camera parameters
 #define CAMERA_MODE  QVGA
-#define CAMERA_COLOR GRAYSCALE
+#define CAMERA_COLOR RGB565
 #define CAMERA_FPS   1
