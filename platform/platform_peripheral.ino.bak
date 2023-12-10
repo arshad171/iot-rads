@@ -278,21 +278,12 @@ void sendSyncFlag() {
 
 void sendWeightsBatch() {
   sendWeightsBuffer.syncFlag = false;
+
   // if layerIndex == 2){
   //   OFFSET = OUT2
   // }
-  if (layerIndex == 1) {
-    sendWeightsBuffer.layerIndex = layerIndex;
-    sendWeightsBuffer.rowIndex = rowIndex;
-    sendWeightsBuffer.colIndex = colIndex;
-    lin1.copyWeightsToBuffer(rowIndex, colIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
-    readCharacteristic.writeValue((byte *)&sendWeightsBuffer, sizeof(sendWeightsBuffer));
-    Serial.println("sent");
-    Serial.println(sendWeightsBuffer.weights[0]);
-    Serial.println(sendWeightsBuffer.weights[BLE_NUM_WEIGHTS - 1]);
-    Serial.println(rowIndex);
-    Serial.println(colIndex);
 
+  if (layerIndex == 1) {
     colIndex += BLE_NUM_WEIGHTS;
 
     if (colIndex >= in1) {
@@ -305,6 +296,18 @@ void sendWeightsBatch() {
       // layerIndex += 1;
       colIndex = 0;
     }
+
+    sendWeightsBuffer.layerIndex = layerIndex;
+    sendWeightsBuffer.rowIndex = rowIndex;
+    sendWeightsBuffer.colIndex = colIndex;
+    lin1.copyWeightsToBuffer(rowIndex, colIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+    readCharacteristic.writeValue((byte *)&sendWeightsBuffer, sizeof(sendWeightsBuffer));
+    Serial.println("sent");
+    Serial.println(sendWeightsBuffer.weights[0]);
+    Serial.println(sendWeightsBuffer.weights[BLE_NUM_WEIGHTS - 1]);
+    Serial.println(rowIndex);
+    Serial.println(colIndex);
+
   }
 }
 
@@ -537,8 +540,8 @@ void loop() {
 
   if (writeCharacteristic.written()) {
     sendFlag = false;
-    // receiveWeightsBatch();
-    receiveWeightsBatchAvg();
+    receiveWeightsBatch();
+    // receiveWeightsBatchAvg();
 
     // sendWeights();
     sendWeightsBatch();
