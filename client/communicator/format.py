@@ -36,8 +36,8 @@ class Command(Enum):
     REPORT_ANOMALY = (1, "Report anomaly")
     GET_FEATURE_VECTOR = (2, "Request feature vector")
     SET_FEATURE_VECTOR = (3, "Update feature vector")
-    GET_FRAME = (4, "Get picture from camera")
-    SET_FRAME = (5, "Store picture from camera")
+    GET_FRAME = (4, "Store picture from camera")
+    SET_FRAME = (5, "Request picture from camera")
 
     def __init__(self, cid, label):
         self.id = cid
