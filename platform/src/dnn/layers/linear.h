@@ -94,9 +94,9 @@ public:
     return dLdb;
   }
 
-  void copyWeightsToBuffer(int rowIndex, float *buffer, int size) {
-    for (int c = 0; c < size; c++) {
-      if (c >= ToutputSize) {
+  void copyWeightsToBuffer(int rowIndex, int colIndex, float *buffer, int size) {
+    for (int c = colIndex; c < size; c++) {
+      if (c >= TinputSize) {
         buffer[c] = 0.0;
       } else {
         buffer[c] = this->weights(rowIndex, c);
@@ -104,8 +104,8 @@ public:
     }
   }
 
-  void copyBiasToBuffer(float *buffer, int size) {
-    for (int r = 0; r < size; r++) {
+  void copyBiasToBuffer(int colIndex, float *buffer, int size) {
+    for (int r = colIndex; r < size; r++) {
       if (r >= ToutputSize) {
         buffer[r] = 0.0;
       } else {
@@ -114,14 +114,14 @@ public:
     }
   }
 
-    void copyWeightsFromBuffer(int rowIndex, float *buffer, int size) {
-    for (int c = 0; c < ToutputSize; c++) {
+  void copyWeightsFromBuffer(int rowIndex, int colIndex, float *buffer, int size) {
+    for (int c = colIndex; c < ToutputSize; c++) {
       this->weights(rowIndex, c) = buffer[c];
     }
   }
 
-  void copyBiasFromBuffer(float *buffer, int size) {
-    for (int r = 0; r < ToutputSize; r++) {
+  void copyBiasFromBuffer(int colIndex, float *buffer, int size) {
+    for (int r = colIndex; r < ToutputSize; r++) {
       this->bias(r, 1) = buffer[r];
     }
   }
