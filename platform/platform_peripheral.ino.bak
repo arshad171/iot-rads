@@ -17,6 +17,8 @@
 
 
 bool sendFlag = true;
+bool biasFlag = false;
+bool stopFlag = false;
 const int BLE_NUM_WEIGHTS = 25;
 
 typedef struct __attribute__((packed)) {
@@ -31,7 +33,7 @@ typedef struct __attribute__((packed)) {
 int layerIndex = 1;
 int rowIndex, colIndex = 0;
 float avgWeightsBuffer[BLE_NUM_WEIGHTS] = { 0.0 };
-bool biasFlag = false;
+
 // typedef struct __attribute__((packed)) {
 //   int a;
 //   int b;
@@ -281,30 +283,98 @@ void sendSyncFlag() {
   Serial.println("sent sync packet");
 }
 
+
+void send() {
+  sendWeightsBuffer.layerIndex = layerIndex;
+  sendWeightsBuffer.rowIndex = rowIndex;
+  sendWeightsBuffer.colIndex = colIndex;
+  sendWeightsBuffer.biasFlag = biasFlag;
+
+  if (!biasFlag) {
+    sendWeightsBatch();
+  } else {
+    sendBiasBatch();
+  }
+}
+
+void receive() {
+  writeCharacteristic.readValue((byte *)&receiveWeightsBuffer, sizeof(receiveWeightsBuffer));
+
+  // bool biasFlagLocal = receiveWeightsBuffer.biasFlag;
+  // int layerIndexLocal = receiveWeightsBuffer.layerIndex;
+  // int rowIndexLocal = receiveWeightsBuffer.rowIndex;
+  // int colIndexLocal = receiveWeightsBuffer.colIndex;
+
+  // Serial.println("---checks---");
+  // Serial.print("bias flag "); Serial.println(biasFlagLocal == biasFlag);
+  // Serial.print("layer index "); Serial.println(layerIndexLocal == layerIndex);
+  // Serial.print("row index "); Serial.println(rowIndexLocal == rowIndex);
+  // Serial.print("col index "); Serial.println(colIndexLocal == colIndex);
+  // Serial.println("---checks---");
+
+  // if ((biasFlagLocal != biasFlag) || (layerIndexLocal != layerIndex) || (rowIndexLocal != rowIndex) || (colIndexLocal != colIndex)) {
+  //   Serial.println("resending packet");
+  //   return;
+  // }
+
+
+  if (!biasFlag) {
+    receiveWeightsBatch();
+  } else {
+    receiveBiasBatch();
+  }
+
+  layerIndex = receiveWeightsBuffer.layerIndex;
+  rowIndex = receiveWeightsBuffer.rowIndex;
+  colIndex = receiveWeightsBuffer.colIndex;
+  biasFlag = receiveWeightsBuffer.biasFlag;
+
+  if (!biasFlag) {
+    colIndex += BLE_NUM_WEIGHTS;
+
+    if (colIndex >= inputLayersSizes[layerIndex - 1]) {
+      // move on to next neuron
+      rowIndex += 1;
+      colIndex = 0;
+    }
+
+    if (rowIndex >= outputLayersSizes[layerIndex - 1]) {
+      // move to next layer
+      rowIndex = 0;
+      colIndex = 0;
+      layerIndex += 1;
+
+      // switch to sending bias
+      if (layerIndex >= 5) {
+        layerIndex = 1;
+        rowIndex = 0;
+        colIndex = 0;
+
+        biasFlag = true;
+      }
+    }
+  } else {
+    colIndex += BLE_NUM_WEIGHTS;
+    if (colIndex >= outputLayersSizes[layerIndex - 1]) {
+      // next layer, start at colIndex = 0
+      layerIndex += 1;
+      colIndex = 0;
+
+      // swtich back to sending weights
+      if (layerIndex >= 5) {
+        layerIndex = 1;
+        rowIndex = 0;
+        colIndex = 0;
+
+        biasFlag = false;
+      }
+    }
+  }
+}
+
 void sendWeightsBatch() {
   sendWeightsBuffer.syncFlag = false;
   sendWeightsBuffer.biasFlag = false;
-
-  colIndex += BLE_NUM_WEIGHTS;
-
-  if (colIndex >= inputLayersSizes[layerIndex - 1]) {
-    rowIndex += 1;
-    colIndex = 0;
-  }
-
-  if (rowIndex >= outputLayersSizes[layerIndex - 1]) {
-    rowIndex = 0;
-    layerIndex += 1;
-    if (layerIndex >= 5) {
-      layerIndex = 1;
-      rowIndex = 0;
-      colIndex = 0;
-
-      sendWeightsBuffer.biasFlag = true;
-      biasFlag = true;
-    }
-    colIndex = 0;
-  }
 
   switch (layerIndex) {
     case 1:
@@ -321,9 +391,6 @@ void sendWeightsBatch() {
       break;
   }
 
-  sendWeightsBuffer.layerIndex = layerIndex;
-  sendWeightsBuffer.rowIndex = rowIndex;
-  sendWeightsBuffer.colIndex = colIndex;
   readCharacteristic.writeValue((byte *)&sendWeightsBuffer, sizeof(sendWeightsBuffer));
   Serial.println("sent");
   Serial.print("layer: ");
@@ -332,18 +399,19 @@ void sendWeightsBatch() {
   Serial.println(rowIndex);
   Serial.print("col: ");
   Serial.println(colIndex);
+  Serial.print("bias flag: ");
+  Serial.println(biasFlag);
   Serial.println("-----");
 }
 
 void receiveWeightsBatch() {
-  writeCharacteristic.readValue((byte *)&receiveWeightsBuffer, sizeof(receiveWeightsBuffer));
-
   if (receiveWeightsBuffer.biasFlag) return;
 
 
   int layerIndex = receiveWeightsBuffer.layerIndex;
   int rowIndex = receiveWeightsBuffer.rowIndex;
   int colIndex = receiveWeightsBuffer.colIndex;
+  bool biasFlag = receiveWeightsBuffer.biasFlag;
 
   switch (layerIndex) {
     case 1:
@@ -367,6 +435,8 @@ void receiveWeightsBatch() {
   Serial.println(rowIndex);
   Serial.print("col: ");
   Serial.println(colIndex);
+  Serial.print("bias flag: ");
+  Serial.println(biasFlag);
   Serial.println("-----");
 }
 
@@ -393,23 +463,6 @@ void sendBiasBatch() {
   sendWeightsBuffer.syncFlag = false;
   sendWeightsBuffer.biasFlag = true;
 
-  colIndex += BLE_NUM_WEIGHTS;
-
-  if (colIndex >= outputLayersSizes[layerIndex - 1] - BLE_NUM_WEIGHTS && layerIndex == 4){sendWeightsBuffer.biasFlag = false;}
-
-  if (colIndex >= outputLayersSizes[layerIndex - 1]) {
-    layerIndex += 1;
-
-    if (layerIndex >= 5) {
-      layerIndex = 1;
-      rowIndex = 0;
-      colIndex = 0;
-
-      biasFlag = false;
-    }
-    colIndex = 0;
-  }
-
   switch (layerIndex) {
     case 1:
       lin1.copyBiasToBuffer(colIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
@@ -425,9 +478,6 @@ void sendBiasBatch() {
       break;
   }
 
-  sendWeightsBuffer.layerIndex = layerIndex;
-  sendWeightsBuffer.rowIndex = rowIndex;
-  sendWeightsBuffer.colIndex = colIndex;
   readCharacteristic.writeValue((byte *)&sendWeightsBuffer, sizeof(sendWeightsBuffer));
   Serial.println("sent (bias)");
   Serial.print("layer: ");
@@ -436,17 +486,18 @@ void sendBiasBatch() {
   Serial.println(rowIndex);
   Serial.print("col: ");
   Serial.println(colIndex);
+  Serial.print("bias flag: ");
+  Serial.println(biasFlag);
   Serial.println("-----");
 }
 
 void receiveBiasBatch() {
-  writeCharacteristic.readValue((byte *)&receiveWeightsBuffer, sizeof(receiveWeightsBuffer));
-
   if (!receiveWeightsBuffer.biasFlag) return;
 
   int layerIndex = receiveWeightsBuffer.layerIndex;
   int rowIndex = receiveWeightsBuffer.rowIndex;
   int colIndex = receiveWeightsBuffer.colIndex;
+  bool biasFlag = receiveWeightsBuffer.biasFlag;
 
   switch (layerIndex) {
     case 1:
@@ -470,6 +521,8 @@ void receiveBiasBatch() {
   Serial.println(rowIndex);
   Serial.print("col: ");
   Serial.println(colIndex);
+  Serial.print("bias flag: ");
+  Serial.println(biasFlag);
   Serial.println("-----");
 }
 
@@ -552,17 +605,9 @@ void loop() {
 
   if (writeCharacteristic.written()) {
     sendFlag = false;
-    if (biasFlag) {
-      // send and receive bias
-      receiveBiasBatch();
-      sendBiasBatch();
-    } else {
-      receiveWeightsBatch();
-      sendWeightsBatch();
-    }
-    // receiveWeightsBatchAvg();
 
-    // sendWeights();
+    receive();
+    send();
 
     delay(10);
   }
