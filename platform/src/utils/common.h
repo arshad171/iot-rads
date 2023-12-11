@@ -1,6 +1,5 @@
 #pragma once
 #include "logging.h"
-#include "../communication/serial/serial.h"
 #include <Arduino.h>
 
 // Define convenience macros
@@ -15,6 +14,3 @@ enum RBOD {
 
 void die(uint8_t strobes);
 void *memalloc(size_t sz);
-
-// Global serial port wrapper object
-extern SerialPort SP;

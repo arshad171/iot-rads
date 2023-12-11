@@ -1,8 +1,7 @@
 #include "protocol.h"
 #include <string.h>
 
-// Begin of transmission marker
-char *packet_magic = "IOT-RADS";
+static const char *packet_magic = PACKET_MAGIC;
 
 void pack(byte *data,size_t sz,DType type,Cmd cmd,Channel *chan) {
     Packet *packet = new Packet();

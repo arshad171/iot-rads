@@ -1,5 +1,6 @@
 #include "common.h"
 #include "logging.h"
+#include "../communication/serial/serial.h"
 #include "../communication/protocol.h"
 #include <stdarg.h>
 #include <stdlib.h>

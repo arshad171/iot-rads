@@ -14,3 +14,6 @@ class SerialPort : public Channel {
         bool is_available();
         bool blocking_wait(unsigned long timeout_ms);
 };
+
+// Global serial port wrapper object
+extern SerialPort SP;

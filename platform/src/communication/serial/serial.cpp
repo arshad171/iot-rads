@@ -1,6 +1,8 @@
 #include "../../utils/common.h"
 #include "serial.h"
 
+static const char *packet_magic = PACKET_MAGIC;
+
 void SerialPort::initialize(unsigned long baud,unsigned long timeout_ms) {
     Serial.begin(baud,SERIAL_8N1);
     Serial.setTimeout(timeout_ms);
@@ -37,12 +39,16 @@ Packet SerialPort::recv() {
     Packet packet;
     size_t rec_sz;
 
+    size_t magic_length = sizeof(packet.header.magic);
+
+    // Safely initialize critical variables
+    packet.data = nullptr;
+    memset(packet.header.magic,0,magic_length);
+
     // Do nothing if we are not initialized
     if(!this->initialized) {
         return packet; // No point in logging: the serial port is not available
     }
-
-    size_t magic_length = sizeof(packet.header.magic);
     
     // Find a valid magic
     uint8_t valid_found = 0;
@@ -50,12 +56,11 @@ Packet SerialPort::recv() {
         size_t read = Serial.readBytes(&packet.header.magic[valid_found],1);
         if(read != 1) {
             // We timed out - no data is available
-            memset(&packet.header.magic,0,magic_length);
             return packet;
         }
 
         // Detect if the correct character has been read
-        if(packet.header.magic[valid_found] == packet.header.magic[valid_found]) {
+        if(packet.header.magic[valid_found] == packet_magic[valid_found]) {
             valid_found++;
         } else {
             LOG(LOG_DEBUG,"Received malformed packet (invalid magic)");

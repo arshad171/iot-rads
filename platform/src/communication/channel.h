@@ -1,6 +1,9 @@
 #pragma once
 #include "packet.h"
 
+// Begin of transmission marker
+#define PACKET_MAGIC "IOT-RADS";
+
 class Channel {
     protected:
         bool initialized = false;
