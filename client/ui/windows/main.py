@@ -101,7 +101,7 @@ class MainWindow(QMainWindow):
 
     @pyqtSlot()
     def get_frame(self):
-        self.__handler.send(Packet(None,Command.GET_FRAME,DataType.LOG))
+        self.__handler.send(Packet(None,Command.GET_FRAME,DataType.CMD))
 
 
 class MainThread(QThread):

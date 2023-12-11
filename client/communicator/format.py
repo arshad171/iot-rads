@@ -15,6 +15,7 @@ class DataType(Enum):
     LOG = (0, "Log")
     MAT = (1, "Matrix")
     IMG = (2, "Image")
+    CMD = (3, "Command") # Empty packet - just command
 
     def __init__(self, tid, label):
         self.id = tid

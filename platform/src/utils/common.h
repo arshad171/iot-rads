@@ -10,6 +10,7 @@
 enum RBOD {
     CAMERA_ERROR = 1,
     MEMORY_ERROR,
+    FATAL_PROTOCOL_ERROR
 };
 
 void die(uint8_t strobes);

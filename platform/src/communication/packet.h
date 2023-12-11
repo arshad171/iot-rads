@@ -5,7 +5,8 @@
 enum DType : byte { // Types of data that can be transmitted
     LOG,
     MAT,
-    IMG
+    IMG,
+    CMD  // Empty packet - just command
 };
 
 enum Cmd : byte { // Commands that can be sent to or received from other devices
