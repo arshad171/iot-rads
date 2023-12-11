@@ -82,6 +82,7 @@ class MainWindow(QMainWindow):
     @pyqtSlot(str)
     def status_update(self,status: str):
         """ Update the status text """
+        print(status)
         self.__status.showMessage(status)
 
     @pyqtSlot(Image)
