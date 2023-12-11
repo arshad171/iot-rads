@@ -1,6 +1,9 @@
 #include "src/utils/common.h"
 #include "src/camera/camera.h"
 #include "src/dnn/network.h"
+
+// Communication stack
+#include "src/communication/serial/serial.h"
 #include "src/communication/protocol.h"
 
 // Platform settings
@@ -13,6 +16,16 @@ volatile static bool acquireImage = false;
 void handleShutterButton() {
     acquireImage = true;
 }
+
+// Utility functions
+void send_picture() {
+    LOG_SHORT(LOG_DEBUG,"Acquiring image...");
+    RichImage *image = get_image();
+    pack((byte *) image,getRichImageSize(image),DType::IMG,Cmd::SET_FRAME,&SP);
+    free(image);
+}
+
+
 
 void setup() {
     // Setup the board's status indicators
@@ -50,14 +63,35 @@ void setup() {
     initialize();
 }
 
-void loop(){
+// Main loop of the program
+void loop() {
+    // Read incoming commands
+    while(true) {
+        Packet incoming = SP.recv();
+
+        // Stop when we process all commands
+        if(incoming.header.magic[0] == 0) {
+            break;
+        }
+        
+        switch(incoming.header.command) {
+            case Cmd::GET_FRAME:
+                LOG_SHORT(LOG_INFO,(char *) incoming.data);
+                send_picture();
+                break;
+        }
+
+        // Free the data after we are done
+        if(incoming.data != nullptr) {
+            free(incoming.data);
+        }
+    }
+    
+
     train();
 
     if(acquireImage) {
-        LOG_SHORT(LOG_DEBUG,"Acquiring image...");
-        RichImage *image = get_image();
-        pack((byte *) image,getRichImageSize(image),DType::IMG,Cmd::SET_FRAME,&SP);
-        free(image);
+        send_picture();        
 
         // Reset the handler
         acquireImage = false;
