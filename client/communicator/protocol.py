@@ -76,7 +76,7 @@ class Protocol:
 
     def send(self, packet: Packet):
         """ Send a packet to the port """
-        self.__port.inbox.put(packet)
+        self.__port.outbox.put(packet)
 
     def stop(self):
         """ Stop the mailbox """
