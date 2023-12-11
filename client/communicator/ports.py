@@ -6,6 +6,8 @@ from queue import SimpleQueue
 import struct
 import time
 
+from ui.glob import GLOBAL_SIGNALS
+
 from serial import Serial,SerialException,EIGHTBITS,STOPBITS_ONE,PARITY_NONE
 from communicator.format import Packet,DataType,Command
 
@@ -52,7 +54,7 @@ class SerialChannel(Backend):
         self.__port = Serial()
 
     def open(self):
-        print("******** Opening Serial Port")
+        GLOBAL_SIGNALS.status_signal.emit("Opening Serial Port")
         while not self.__port.is_open:
             try:
                 self.__port = Serial(self.__path,self.__baud,timeout=self.__tout,parity=PARITY_NONE,
@@ -60,12 +62,16 @@ class SerialChannel(Backend):
                 continue
             except SerialException:
                 time.sleep(self.__tout)
+    
+        # Clear the window
+        GLOBAL_SIGNALS.status_signal.emit("Serial Port open")
+        GLOBAL_SIGNALS.flush_log_signal.emit()
 
     def close(self):
         try:
             self.__port.close()
         except SerialException:
-            print("******** Failed to close serial port.")
+            GLOBAL_SIGNALS.status_signal.emit("Failed to close serial port.")
 
     def send_packet(self, packet: Packet):
         try:
@@ -100,8 +106,7 @@ class SerialChannel(Backend):
 
             return Packet(payload, Command.by_id(cmd_id), DataType.by_id(type_id))
         except SerialException as e:
-            raise SerialPortException(
-                "Error while trying to read data from the serial port") from e
+            raise SerialPortException("Error while trying to read data from the serial port") from e
 
     def get_timeout(self) -> float:
         return self.__tout
@@ -135,22 +140,21 @@ class Port(Thread):
             # Check whether we have packets to send
             while not self.outbox.empty():
                 self.__backend.send_packet(self.outbox.get(False))
-
             try:
                 if (p := self.__backend.read_packet()) is not None:
                     self.inbox.put(p)
             except InvalidDataTypeException as e:
-                print(f"******** Received data of invalid type 0x{e.id:08x}")
+                GLOBAL_SIGNALS.status_signal.emit(f"Received data of invalid type 0x{e.id:08x}")
             except InvalidCommandException as e:
-                print(f"******** Received invalid command 0x{e.id:08x}")
+                GLOBAL_SIGNALS.status_signal.emit(f"Received invalid command 0x{e.id:08x}")
             except MalformedPacketException as e:
-                print(f"******** Received malformed packet: {e}")
+                GLOBAL_SIGNALS.status_signal.emit(f"Received malformed packet: {e}")
             except SerialPortException:
-                print("******** Serial communication crashed: restarting...")
+                GLOBAL_SIGNALS.status_signal.emit("Serial communication crashed: restarting...")
                 self.__backend.close()
                 self.__backend.open()
             except Exception as e: # pylint: disable=broad-except
-                print("******** Unknown exception while handling serial communication!")
+                GLOBAL_SIGNALS.status_signal.emit("Unknown exception while handling serial communication!")
                 print(e)
 
                 self.stop()
