@@ -14,4 +14,4 @@ void log(int,char *,int,char *,...);
 
 // Logging macros
 #define LOG(severity,format,...) log(severity,__FILE__,__LINE__,format,##__VA_ARGS__)
-#define LOG_SHORT(severity,format,...) log(severity,NULL,NULL,format,##__VA_ARGS__)
+#define LOG_SHORT(severity,format,...) log(severity,0,0,format,##__VA_ARGS__)
