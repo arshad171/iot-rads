@@ -45,7 +45,7 @@ RichMatrix *BLAtoRichMatrix(BLA::Matrix<r,c,t> *matrix, MatrixType type) {
     capsule->metadata.rows = r;
     capsule->metadata.type = type;
 
-    // Copy the matrix data
+    // Copy the matrix data (ROW MAJOR ORDER)
     memcpy(capsule->data,matrix->storage,data_size);
     return capsule;
 }
