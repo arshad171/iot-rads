@@ -52,6 +52,13 @@
           </property>
           <layout class="QVBoxLayout" name="verticalLayout">
            <item>
+            <widget class="QPushButton" name="save_btn">
+             <property name="text">
+              <string>Save Picture...</string>
+             </property>
+            </widget>
+           </item>
+           <item>
             <widget class="QPushButton" name="shutter_btn">
              <property name="text">
               <string>Get Picture</string>
