@@ -19,6 +19,7 @@ const int BLE_NUM_WEIGHTS = 25;
 
 typedef struct __attribute__((packed)) {
   bool syncFlag = false;
+  bool biasFlag = false;
   int layerIndex;
   int rowIndex;
   int colIndex;
@@ -284,13 +285,143 @@ void BLEserviceExecution() {
   }
   while (peripheral.connected()) {
     if (readCharacteristic.valueUpdated()) {
-      Serial.println("Received weights");
-      receiveWeightsBatchAvg();
-      Serial.println("Sent weights");
-      sendWeightsBatch();
+      if (receiveWeightsBuffer.biasFlag) {
+        Serial.println("Received bias");
+        receiveBiasBatchAvg();
+        Serial.println("Sent bias");
+        sendBiasBatch();
+      } else {
+        Serial.println("Received weights");
+        receiveWeightsBatchAvg();
+        Serial.println("Sent weights");
+        sendWeightsBatch();
+      }
+
       delay(10);
     }
   }
+}
+
+void sendBiasBatch() {
+  sendWeightsBuffer.syncFlag = false;
+  sendWeightsBuffer.biasFlag = true;
+  sendWeightsBuffer.layerIndex = layerIndex;
+  sendWeightsBuffer.rowIndex = rowIndex;
+  sendWeightsBuffer.colIndex = colIndex;
+
+  switch (layerIndex) {
+    case 1:
+      lin1.copyBiasToBuffer(colIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+      break;
+    case 2:
+      lin2.copyBiasToBuffer(colIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+      break;
+    case 3:
+      lin3.copyBiasToBuffer(colIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+      break;
+    case 4:
+      lin4.copyBiasToBuffer(colIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+      break;
+  }
+
+  writeCharacteristic.writeValue((byte *)&sendWeightsBuffer, sizeof(sendWeightsBuffer));
+  Serial.println("sent (bias)");
+  Serial.print("layer: ");
+  Serial.println(layerIndex);
+  Serial.print("row: ");
+  Serial.println(rowIndex);
+  Serial.print("col: ");
+  Serial.println(colIndex);
+  Serial.println("-----");
+}
+
+void receiveBiasBatch() {
+  readCharacteristic.readValue((byte *)&receiveWeightsBuffer, sizeof(receiveWeightsBuffer));
+
+  layerIndex = receiveWeightsBuffer.layerIndex;
+  rowIndex = receiveWeightsBuffer.rowIndex;
+  colIndex = receiveWeightsBuffer.colIndex;
+
+  switch (layerIndex) {
+    case 1:
+      lin1.copyBiasFromBuffer(colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+      break;
+    case 2:
+      lin2.copyBiasFromBuffer(colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+      break;
+    case 3:
+      lin3.copyBiasFromBuffer(colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+      break;
+    case 4:
+      lin4.copyBiasFromBuffer(colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+      break;
+  }
+
+  Serial.println("received (bias)");
+  Serial.print("layer: ");
+  Serial.println(layerIndex);
+  Serial.print("row: ");
+  Serial.println(rowIndex);
+  Serial.print("col: ");
+  Serial.println(colIndex);
+  Serial.print("flag: ");
+  Serial.println(receiveWeightsBuffer.biasFlag);
+  Serial.println("-----");
+}
+
+void receiveBiasBatchAvg() {
+  readCharacteristic.readValue((byte *)&receiveWeightsBuffer, sizeof(receiveWeightsBuffer));
+
+  if (!receiveWeightsBuffer.biasFlag) return;
+
+  layerIndex = receiveWeightsBuffer.layerIndex;
+  rowIndex = receiveWeightsBuffer.rowIndex;
+  colIndex = receiveWeightsBuffer.colIndex;
+
+  switch (layerIndex) {
+    case 1:
+      lin1.copyBiasToBuffer(colIndex, avgWeightsBuffer, BLE_NUM_WEIGHTS);
+      break;
+    case 2:
+      lin2.copyBiasToBuffer(colIndex, avgWeightsBuffer, BLE_NUM_WEIGHTS);
+      break;
+    case 3:
+      lin3.copyBiasToBuffer(colIndex, avgWeightsBuffer, BLE_NUM_WEIGHTS);
+      break;
+    case 4:
+      lin4.copyBiasToBuffer(colIndex, avgWeightsBuffer, BLE_NUM_WEIGHTS);
+      break;
+  }
+
+  for (int i = 0; i < BLE_NUM_WEIGHTS; i++) {
+    receiveWeightsBuffer.weights[i] = 0.5 * (receiveWeightsBuffer.weights[i] + avgWeightsBuffer[i]);
+  }
+
+  switch (layerIndex) {
+    case 1:
+      lin1.copyBiasFromBuffer(colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+      break;
+    case 2:
+      lin2.copyBiasFromBuffer(colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+      break;
+    case 3:
+      lin3.copyBiasFromBuffer(colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+      break;
+    case 4:
+      lin4.copyBiasFromBuffer(colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+      break;
+  }
+
+  Serial.println("received (bias)");
+  Serial.print("layer: ");
+  Serial.println(layerIndex);
+  Serial.print("row: ");
+  Serial.println(rowIndex);
+  Serial.print("col: ");
+  Serial.println(colIndex);
+  Serial.print("flag: ");
+  Serial.println(receiveWeightsBuffer.biasFlag);
+  Serial.println("-----");
 }
 
 void sendWeightsBatch() {
@@ -358,6 +489,8 @@ void receiveWeightsBatch() {
 
 void receiveWeightsBatchAvg() {
   readCharacteristic.readValue((byte *)&receiveWeightsBuffer, sizeof(receiveWeightsBuffer));
+
+  if (receiveWeightsBuffer.biasFlag) return;
 
   if (receiveWeightsBuffer.syncFlag == true) {
     Serial.println("Not synchronized");
