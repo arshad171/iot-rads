@@ -6,10 +6,10 @@ from queue import SimpleQueue
 import struct
 import time
 
-from ui.glob import GLOBAL_SIGNALS
-
 from serial import Serial,SerialException,EIGHTBITS,STOPBITS_ONE,PARITY_NONE
 from communicator.format import Packet,DataType,Command
+
+from ui.glob import GLOBAL_SIGNALS
 
 from exceptions import (
     MalformedPacketException,
