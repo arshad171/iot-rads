@@ -9,6 +9,13 @@
 // Platform settings
 #include "settings/device.h"
 
+
+
+// Runtime variables
+static RichMatrix *feature_vector = nullptr;
+
+
+
 // Interrupt signals
 volatile static bool acquireImage = false;
 
@@ -16,6 +23,8 @@ volatile static bool acquireImage = false;
 void handleShutterButton() {
     acquireImage = true;
 }
+
+
 
 // Utility functions
 void send_picture() {
@@ -68,6 +77,7 @@ void loop() {
     // Read incoming commands
     while(true) {
         Packet incoming = SP.recv();
+        bool should_free = true;
 
         // Stop when we process all commands
         if(incoming.header.magic[0] == 0) {
@@ -76,8 +86,22 @@ void loop() {
         
         switch(incoming.header.command) {
             case Cmd::GET_FRAME:
-                LOG_SHORT(LOG_INFO,(char *) incoming.data);
                 send_picture();
+                break;
+            
+            case Cmd::SET_FEATURE_VECTOR:
+                if(incoming.header.type != DType::MAT) {
+                    LOG(LOG_ERROR,"Received feature vector of wrong type %d",incoming.header.type);
+                    break;
+                }
+
+                if(feature_vector != nullptr) {
+                    free(feature_vector);
+                }
+
+                feature_vector = (RichMatrix *) incoming.data;
+                LOG_SHORT(LOG_DEBUG,"Received %dx%d feature vector",feature_vector->metadata.rows,feature_vector->metadata.cols);
+                should_free = false;
                 break;
         }
 
@@ -86,10 +110,8 @@ void loop() {
             free(incoming.data);
         }
     }
-    
 
-    train();
-
+    // Handle interrupts
     if(acquireImage) {
         send_picture();        
 
