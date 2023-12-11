@@ -7,7 +7,7 @@ from PIL.Image import Image
 from PyQt6 import uic, QtWidgets
 from PyQt6.QtCore import QThread,pyqtSignal,pyqtSlot
 
-from ui.glob import GLOBAL_SIGNALS,BLANK_IMAGE
+from ui.glob import GLOBAL_SIGNALS
 
 from communicator.format import Command
 from communicator.protocol import Protocol
@@ -60,22 +60,21 @@ class MainWindow(QtWidgets.QMainWindow):
     def flush_log(self):
         """ Clear the log pane """
         self.__log_txt.clear()
-    
+
     @pyqtSlot(str)
     def status_update(self,status: str):
         """ Update the status text """
         self.__status.showMessage(status)
-    
+
     @pyqtSlot(Image)
     def set_frame(self,image: Image):
+        """ Sets the content of the image frame """
         self.__frame.setPixmap(image.toqpixmap())
 
 
 class MainThread(QThread):
     """ Main thread of the client """
     INTERVAL = .5
-
-    cctf = pyqtSignal(str)
 
     def __init__(self):
         # Initialize PyQt interface
@@ -96,6 +95,7 @@ class MainThread(QThread):
 
     def run(self):
         """ Main loop of the client """
+
         while True:
             self.__handler.handle()
             time.sleep(self.INTERVAL)

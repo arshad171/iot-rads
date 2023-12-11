@@ -3,6 +3,7 @@ import sys
 from PyQt6 import QtWidgets as QT
 
 from ui.windows.main import MainThread
+from ui.glob import GLOBAL_SIGNALS
 
 if __name__ == "__main__":
     app = QT.QApplication(sys.argv)

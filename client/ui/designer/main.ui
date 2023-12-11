@@ -41,7 +41,7 @@
            </size>
           </property>
           <property name="text">
-           <string>frame</string>
+           <string/>
           </property>
          </widget>
         </item>
