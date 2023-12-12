@@ -9,5 +9,5 @@
 
 // Camera parameters
 #define CAMERA_MODE  QVGA
-#define CAMERA_COLOR RGB565
+#define CAMERA_COLOR GRAYSCALE
 #define CAMERA_FPS   1
