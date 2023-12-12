@@ -15,9 +15,6 @@
 // #include <Arduino_OV767X.h>
 #include <BasicLinearAlgebra.h>
 
-bool sendFlag = true;
-bool biasFlag = false;
-bool stopFlag = false;
 const int BLE_NUM_WEIGHTS = 25;
 
 typedef struct __attribute__((packed)) {
@@ -30,35 +27,26 @@ typedef struct __attribute__((packed)) {
   float weights[BLE_NUM_WEIGHTS];
 } WeightsBuffer;
 
+bool sendFlag = true;
+bool biasFlag = false;
+bool stopFlag = false;
+
 int layerIndex = 1;
 int rowIndex, colIndex = 0;
 float avgWeightsBuffer[BLE_NUM_WEIGHTS] = { 0.0 };
 
-// typedef struct __attribute__((packed)) {
-//   int a;
-//   int b;
-//   float weights[25] = {-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0};
-// } Temp;
-
 WeightsBuffer sendWeightsBuffer, receiveWeightsBuffer;
-// Temp temp1, temp2;
 
 BLEService networkService("19B10011-E8F2-537E-4F6C-D104768A1214");  // Bluetooth® Low Energy LED Service
 
 BLECharacteristic readCharacteristic("2A36", BLERead | BLEIndicate, sizeof(sendWeightsBuffer));
 BLECharacteristic writeCharacteristic("2A37", BLEWrite, sizeof(sendWeightsBuffer));
 
-// BLECharacteristic readCharacteristic("2A36", BLERead | BLEIndicate, 1);
-// BLECharacteristic writeCharacteristic("2A37", BLEWrite, 1);
-
-// BLECharacteristic readCharacteristic("2A36", BLERead | BLEIndicate, sizeof(temp1));
-// BLECharacteristic writeCharacteristic("2A37", BLEWrite, sizeof(temp1));
-
 const float momentum = MOMENTUM;
 const float learning_rate = LEARNING_RATE;
 const int batch_size = BATCH_SIZE;
 const int NUM_TRAINING_DATA = 100;
-const int NUM_EPOCHS = 10;
+const int NUM_EPOCHS = 1;
 const int NUM_ITERS = int(NUM_TRAINING_DATA / batch_size);
 
 // m, n, N
@@ -242,7 +230,10 @@ void train() {
       loss += iterate(xBatch);
     }
     loss /= NUM_ITERS;
-    Serial.print("epoch: "); Serial.print(epoch); Serial.print(" loss: "); Serial.println(loss);
+    Serial.print("epoch: ");
+    Serial.print(epoch);
+    Serial.print(" loss: ");
+    Serial.println(loss);
     // LOG_SHORT(LOG_INFO, "epoch: %d | loss: %f", epoch, loss);
   }
 
@@ -250,13 +241,15 @@ void train() {
   updateXBatch(true);
   loss = iterate(xBatch);
   // LOG_SHORT(LOG_INFO, "train sample: %f", loss);
-  Serial.print("train sample: "); Serial.println(loss);
+  Serial.print("train sample: ");
+  Serial.println(loss);
 
   updateXBatch(false);
   loss = iterate(xBatch);
 
   // LOG_SHORT(LOG_INFO, "test sample: %f", loss);
-  Serial.print("test sample: "); Serial.println(loss);
+  Serial.print("test sample: ");
+  Serial.println(loss);
 }
 
 void blePeripheralConnectHandler(BLEDevice central) {
@@ -304,24 +297,6 @@ void send() {
 void receive() {
   writeCharacteristic.readValue((byte *)&receiveWeightsBuffer, sizeof(receiveWeightsBuffer));
 
-  // bool biasFlagLocal = receiveWeightsBuffer.biasFlag;
-  // int layerIndexLocal = receiveWeightsBuffer.layerIndex;
-  // int rowIndexLocal = receiveWeightsBuffer.rowIndex;
-  // int colIndexLocal = receiveWeightsBuffer.colIndex;
-
-  // Serial.println("---checks---");
-  // Serial.print("bias flag "); Serial.println(biasFlagLocal == biasFlag);
-  // Serial.print("layer index "); Serial.println(layerIndexLocal == layerIndex);
-  // Serial.print("row index "); Serial.println(rowIndexLocal == rowIndex);
-  // Serial.print("col index "); Serial.println(colIndexLocal == colIndex);
-  // Serial.println("---checks---");
-
-  // if ((biasFlagLocal != biasFlag) || (layerIndexLocal != layerIndex) || (rowIndexLocal != rowIndex) || (colIndexLocal != colIndex)) {
-  //   Serial.println("resending packet");
-  //   return;
-  // }
-
-
   if (!biasFlag) {
     receiveWeightsBatch();
   } else {
@@ -332,6 +307,7 @@ void receive() {
   rowIndex = receiveWeightsBuffer.rowIndex;
   colIndex = receiveWeightsBuffer.colIndex;
   biasFlag = receiveWeightsBuffer.biasFlag;
+  // ignore the stop flag received (causes a problem)
   // stopFlag = receiveWeightsBuffer.stopFlag;
 
   if (!biasFlag) {
@@ -449,25 +425,6 @@ void receiveWeightsBatch() {
   Serial.print("stop flag: ");
   Serial.println(stopFlag);
   Serial.println("-----");
-}
-
-void receiveWeightsBatchAvg() {
-  writeCharacteristic.readValue((byte *)&receiveWeightsBuffer, sizeof(receiveWeightsBuffer));
-  int layerIndex = receiveWeightsBuffer.layerIndex;
-  int rowIndex = receiveWeightsBuffer.rowIndex;
-  int colIndex = receiveWeightsBuffer.colIndex;
-
-  lin1.copyWeightsToBuffer(rowIndex, colIndex, avgWeightsBuffer, BLE_NUM_WEIGHTS);
-  for (int i = 0; i < BLE_NUM_WEIGHTS; i++) {
-    receiveWeightsBuffer.weights[i] = 0.5 * (receiveWeightsBuffer.weights[i] + avgWeightsBuffer[i]);
-  }
-
-  lin1.copyWeightsFromBuffer(rowIndex, colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
-  Serial.println("received");
-  Serial.println(receiveWeightsBuffer.weights[0]);
-  Serial.println(receiveWeightsBuffer.weights[BLE_NUM_WEIGHTS - 1]);
-  Serial.println(rowIndex);
-  Serial.println(colIndex);
 }
 
 void sendBiasBatch() {
@@ -612,11 +569,8 @@ void loop() {
   if (!stopFlag) {
     BLE.poll();
     if (sendFlag) {
-      // sendWeights();
-      //sendWeightsBatch();
       sendSyncFlag();
       Serial.println("sending weights");
-      // sendFlag = false;
     }
 
     if (writeCharacteristic.written()) {
@@ -630,8 +584,6 @@ void loop() {
   } else {
     Serial.println("training...");
     train();
-    // delay(5000);
     stopFlag = false;
   }
-
 }
