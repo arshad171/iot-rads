@@ -33,16 +33,17 @@ class Protocol:
         """ Checks whether a backend is connecte to this protocol handler """
         return self.__port is not None
 
+    def register_cmd_direct(self, command: Command, f: callable):
+        """ Register a command handler for the given command """
+        if command.id not in self.cmd_handlers:
+            self.cmd_handlers[command.id] = [f]
+        else:
+            self.cmd_handlers[command.id].append(f)
+
     def register_cmd(self, command: Command):
         """ Register a command handler for the given command """
-
-        # Perform the handler registration
         def decorator(f):
-            if command.id not in self.cmd_handlers:
-                self.cmd_handlers[command.id] = [f]
-            else:
-                self.cmd_handlers[command.id].append(f)
-
+            self.register_cmd_direct(command,f)
         return decorator
 
     def hook_cmd(self, command: Command, signal: pyqtSignal):
@@ -52,20 +53,28 @@ class Protocol:
         else:
             self.cmd_signals[command.id].append(signal)
 
+    def register_decoder_direct(self, dtype: DataType, f: callable):
+        """ Register an encoder for the given type """
+        if dtype.id in self.decoders:
+            raise ValueError("Cannot register two handlers for the same type")
+        self.decoders[dtype.id] = f
+
     def register_decoder(self, dtype: DataType):
         """ Register an encoder for the given type """
         def decorator(f):
-            if dtype.id in self.decoders:
-                raise ValueError("Cannot register two handlers for the same type")
-            self.decoders[dtype.id] = f
+            self.register_decoder_direct(dtype,f)
         return decorator
+
+    def register_encoder_direct(self, dtype: DataType, f: callable):
+        """ Register a decoder for the given type """
+        if dtype.id in self.encoders:
+            raise ValueError("Cannot register two handlers for the same type")
+        self.encoders[dtype.id] = f
 
     def register_encoder(self, dtype: DataType):
         """ Register a decoder for the given type """
         def decorator(f):
-            if dtype.id in self.encoders:
-                raise ValueError("Cannot register two handlers for the same type")
-            self.encoders[dtype.id] = f
+            self.register_encoder_direct(dtype,f)
         return decorator
 
     def handle(self) -> Packet | None:
