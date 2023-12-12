@@ -18,17 +18,16 @@ void SerialPort::send(Packet packet) {
         return; // No point in logging: the serial port is not available
     }
 
-    // Serial.print("\n");Serial.print(packet.header.command);Serial.print(packet.header.type);Serial.println(e);
     size_t hdr_sent_sz = Serial.write((byte *) &packet.header,sizeof(PHeader));
-    size_t dat_sent_sz = Serial.write(packet.data,packet.header.size);
-    // Serial.print("\n");Serial.print(packet.header.command);Serial.print(packet.header.type);Serial.println(e);
-
-     if(hdr_sent_sz != sizeof(PHeader)) {
+    if(hdr_sent_sz != sizeof(PHeader)) {
         LOG(LOG_ERROR,"Error sending header (sent %ld/%ld)",hdr_sent_sz,sizeof(PHeader));
     }
 
-    if(dat_sent_sz != packet.header.size) {
-        LOG(LOG_ERROR,"Error sending header (sent %ld/%ld)",dat_sent_sz,packet.header.size);
+    if(packet.data != nullptr) {
+        size_t dat_sent_sz = Serial.write(packet.data,packet.header.size);
+        if(dat_sent_sz != packet.header.size) {
+            LOG(LOG_ERROR,"Error sending header (sent %ld/%ld)",dat_sent_sz,packet.header.size);
+        }
     }
 }
 
