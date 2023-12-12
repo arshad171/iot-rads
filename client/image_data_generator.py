@@ -12,7 +12,12 @@ import tensorflow_hub as hub
 
 class ImageDataGenerator:
     def __init__(
-        self, dataset_path, mask_path=None, use_dynamic_mask=True, image_size=[224, 224]
+        self,
+        dataset_path,
+        mask_path=None,
+        use_dynamic_mask=True,
+        image_size=[224, 224],
+        downsample_factor=8,
     ) -> None:
         self.MIN = -0.3
         self.MAX = 0.7
@@ -39,7 +44,7 @@ class ImageDataGenerator:
                     trainable=False,
                 ),
                 tf.keras.layers.Lambda(lambda x: tf.expand_dims(x, axis=2)),
-                tf.keras.layers.AveragePooling1D(pool_size=8, padding="valid"),
+                tf.keras.layers.AveragePooling1D(pool_size=downsample_factor, padding="valid"),
             ]
         )
 

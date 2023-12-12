@@ -35,6 +35,11 @@ void send_picture() {
 }
 
 
+void request_feature_vector() {
+  LOG_SHORT(LOG_DEBUG, "Requesting feature vector...");
+  pack(nullptr, 0, DType::CMD, Cmd::GET_FEATURE_VECTOR, &SP);
+}
+
 
 void setup() {
     // Setup the board's status indicators
@@ -91,25 +96,42 @@ void loop() {
                 send_picture();
                 break;
             
-            case Cmd::SET_FEATURE_VECTOR:
+            case Cmd::SET_FEATURE_VECTOR: {
                 if(incoming.header.type != DType::MAT) {
                     LOG(LOG_ERROR,"Received feature vector of wrong type %d",incoming.header.type);
                     break;
                 }
 
+
                 LOG_SHORT(LOG_DEBUG,"Received %dx%d feature vector",feature_vector->metadata.rows,feature_vector->metadata.cols);
-                if(feature_vector != nullptr) {
+                if(feature_vector != nullptr && should_free) {
                     free(feature_vector);
                     LOG_SHORT(LOG_DEBUG,"Old feature vector discarded");
                 }
 
                 feature_vector = (RichMatrix *) incoming.data;
+
+                const int size = feature_vector->metadata.rows * feature_vector->metadata.cols;
+
+                LOG_SHORT(LOG_INFO, "size: %d", size);
+
+                float features[size];
+
+                memcpy(features, feature_vector->data, size * sizeof(float));
+
+                LOG_SHORT(LOG_INFO, "*features: %f %f", features[0], features[1]);
+
                 should_free = false;
 
                 // Do the training
                 train();
+
+                // just for testting. this should ideally go in the train function
+                request_feature_vector();
+
+                // free(features);
                 break;
-            
+              }
             default:
                 LOG_SHORT(LOG_WARNING,"Received unknown command %d",incoming.header.command);
                 break;
