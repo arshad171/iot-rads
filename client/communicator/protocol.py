@@ -9,13 +9,29 @@ from communicator.ports import Port, Backend
 class Protocol:
     """ Implements the RADS protocol """
 
-    def __init__(self, backend: Backend):
-        self.__port = Port(backend)
+    def __init__(self, backend: Backend | None):
+        if backend is not None:
+            self.__port = Port(backend)
+        else:
+            self.__port = None
 
         # Handler registries
         self.cmd_handlers = {}
         self.cmd_signals = {}
-        self.type_handlers = {}
+        self.decoders = {}
+        self.encoders = {}
+
+    def set_backend(self, backend: Backend):
+        """ Sets the backend to the protocol """
+        if self.__port is not None:
+            self.__port.stop()
+
+            
+        self.__port = Port(backend)
+
+    def has_backend(self):
+        """ Checks whether a backend is connecte to this protocol handler """
+        return self.__port is not None
 
     def register_cmd(self, command: Command):
         """ Register a command handler for the given command """
@@ -36,19 +52,28 @@ class Protocol:
         else:
             self.cmd_signals[command.id].append(signal)
 
-    def register_type(self, dtype: DataType):
-        """ Register a type handler for the given type """
-        type_id = dtype.value[0]
-
+    def register_decoder(self, dtype: DataType):
+        """ Register an encoder for the given type """
         def decorator(f):
-            if type_id in self.type_handlers:
+            if dtype.id in self.decoders:
                 raise ValueError("Cannot register two handlers for the same type")
-            self.type_handlers[type_id] = f
+            self.decoders[dtype.id] = f
+        return decorator
 
+    def register_encoder(self, dtype: DataType):
+        """ Register a decoder for the given type """
+        def decorator(f):
+            if dtype.id in self.encoders:
+                raise ValueError("Cannot register two handlers for the same type")
+            self.encoders[dtype.id] = f
         return decorator
 
     def handle(self) -> Packet | None:
         """ Handle any incoming packet using its designated command handlers """
+        # Check that we are initialized
+        if self.__port is None:
+            raise RuntimeError("Backend has not been initialized")
+
         while not self.__port.inbox.empty():
             packet: Packet = self.__port.inbox.get()
             dtype = packet.dtype
@@ -56,8 +81,8 @@ class Protocol:
 
             # If we have a data type handler use it
             data = (
-                self.type_handlers[dtype.id](packet.data)
-                if dtype.id in self.type_handlers
+                self.decoders[dtype.id](packet.data)
+                if dtype.id in self.decoders
                 else packet.data
             )
 
@@ -76,8 +101,24 @@ class Protocol:
 
     def send(self, packet: Packet):
         """ Send a packet to the port """
+        if packet.dtype.id in self.encoders:
+            # Convert the data segment to its C representation using the decoder
+            packet.data = self.encoders[packet.dtype.id](packet.data)
         self.__port.outbox.put(packet)
+
+    def start(self):
+        """ Starts the mailbox """
+        self.__port.start()
 
     def stop(self):
         """ Stop the mailbox """
+        if self.__port is None:
+            return
+        
         self.__port.stop()
+
+        # Wait for the port to stop
+        while not self.__port.stopped():
+            pass
+
+        self.__port = None
