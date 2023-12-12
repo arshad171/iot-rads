@@ -115,13 +115,13 @@ public:
   }
 
   void copyWeightsFromBuffer(int rowIndex, int colIndex, float *buffer, int size) {
-      for (int c = 0; (c < size) && (c < TinputSize); c++) {
+      for (int c = 0; (c < size) && (c + colIndex < TinputSize); c++) {
         this->weights(rowIndex, c + colIndex) = buffer[c];
       }
   }
 
   void copyBiasFromBuffer(int colIndex, float *buffer, int size) {
-    for (int r = 0; (r < size) && (r < ToutputSize); r++) {
+    for (int r = 0; (r < size) && (r + colIndex < ToutputSize); r++) {
       this->bias(r + colIndex, 1) = buffer[r];
     }
   }
