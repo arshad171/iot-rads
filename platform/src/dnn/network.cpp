@@ -1,6 +1,7 @@
 #include "../utils/common.h"
 #include "../../settings/dnn.h"
 #include "network.h"
+#include "../utils/types.h"
 #include <BasicLinearAlgebra.h>
 
 // // NN Layers
@@ -71,7 +72,7 @@ BLA::Matrix<out2, 1> dLdb2;
 BLA::Matrix<out3, 1> dLdb3;
 BLA::Matrix<out4, 1> dLdb4;
 
-void updateXBatch(bool trainingData) {
+void updateXBatch(RichMatrix *X) {
   for (int r = 0; r < xBatch.Rows; r++) {
     for (int c = 0; c < xBatch.Cols; c++) {
       if (trainingData) {
@@ -185,13 +186,13 @@ void initialize() {
   dLdb4.Fill(0.0);
 }
 
-void train() {
+void train(RichMatrix *X) {
   float loss;
   // training
   for (int epoch = 0; epoch < NUM_EPOCHS; epoch++) {
     loss = 0.0;
     for (int iter = 0; iter < NUM_ITERS; iter++) {
-      updateXBatch(true);
+      updateXBatch(X);
       loss += iterate(xBatch);
     }
     loss /= NUM_ITERS;
