@@ -114,7 +114,7 @@ class Protocol:
         """ Stop the mailbox """
         if self.__port is None:
             return
-        
+
         self.__port.stop()
 
         # Wait for the port to stop
