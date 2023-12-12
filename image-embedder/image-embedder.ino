@@ -121,6 +121,7 @@ void loop() {
 
             // Send the output vector
             pack((byte *) tensor,matrix_size,DType::MAT,Cmd::SET_FEATURE_VECTOR,&SP);
+            free(tensor);
         } else {
             LOG(LOG_WARNING,"Unexpected output tensor size.");
         }
