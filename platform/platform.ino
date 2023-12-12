@@ -13,6 +13,7 @@
 
 // Runtime variables
 static RichMatrix *feature_vector = nullptr;
+static bool must_request_data = true;
 
 
 
@@ -79,12 +80,19 @@ void setup() {
 
 // Main loop of the program
 void loop() {
+    // Request data if necessary
+    if(must_request_data) {
+        LOG_SHORT(LOG_INFO,"Requesting feature vector...");
+        pack(nullptr,0,DType::CMD,Cmd::GET_FEATURE_VECTOR,&SP);
+        must_request_data = false; // We already requested the next batch of data
+    }
+
     // Read incoming commands
     while(true) {
         Packet incoming = SP.recv();
         bool should_free = true;
 
-        // Stop when we process all commands
+        // Stop when we process all incoming packets
         if(incoming.header.magic[0] == 0) {
             break;
         }
@@ -121,17 +129,14 @@ void loop() {
 
                 LOG_SHORT(LOG_INFO, "*features: %f %f", features[0], features[1]);
 
-                should_free = false;
-
                 // Do the training
                 train();
 
-                // just for testting. this should ideally go in the train function
-                request_feature_vector();
-
-                // free(features);
+                should_free = false; // DO NOT FREE! The training data stays until replaced
+                must_request_data = true; // We processed this batch; request the next
                 break;
-              }
+            }
+
             default:
                 LOG_SHORT(LOG_WARNING,"Received unknown command %d",incoming.header.command);
                 break;
