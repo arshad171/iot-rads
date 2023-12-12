@@ -91,7 +91,7 @@ class Protocol:
             # If we have a data type handler use it
             data = (
                 self.decoders[dtype.id](packet.data)
-                if dtype.id in self.decoders
+                if packet.data is not None and dtype.id in self.decoders
                 else packet.data
             )
 

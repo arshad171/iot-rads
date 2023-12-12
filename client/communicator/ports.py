@@ -110,9 +110,12 @@ class SerialChannel(Backend):
             cmd_id, data_size, type_id = struct.unpack(header_format, header_data)
 
             # Now we can read the data
-            payload = self.__port.read(data_size)
-            if len(payload) != data_size:
-                raise MalformedPacketException("Incomplete data stream")
+            if data_size > 0:
+                payload = self.__port.read(data_size)
+                if len(payload) != data_size:
+                    raise MalformedPacketException("Incomplete data stream")
+            else:
+                payload = None
 
             return Packet(payload, Command.by_id(cmd_id), DataType.by_id(type_id))
         except SerialException as e:
