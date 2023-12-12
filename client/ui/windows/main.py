@@ -180,7 +180,6 @@ class MainThread(QThread):
 
         # Setup the protocol handler
         self.__handler1 = Protocol(None)
-        self.__handler1.send()
         cmd_handlers.register_command_handlers(self.__handler1)
         type_handlers.register_datatype_decoders(self.__handler1)
         type_handlers.register_datatype_encoders(self.__handler1)
