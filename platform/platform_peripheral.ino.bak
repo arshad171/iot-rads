@@ -15,7 +15,6 @@
 // #include <Arduino_OV767X.h>
 #include <BasicLinearAlgebra.h>
 
-
 bool sendFlag = true;
 bool biasFlag = false;
 bool stopFlag = false;
@@ -24,6 +23,7 @@ const int BLE_NUM_WEIGHTS = 25;
 typedef struct __attribute__((packed)) {
   bool syncFlag = false;
   bool biasFlag = false;
+  bool stopFlag = false;
   int layerIndex;
   int rowIndex;
   int colIndex;
@@ -232,29 +232,32 @@ void initialize() {
   dLdb4.Fill(0.0);
 }
 
-// void train() {
-//   float loss;
-//   // training
-//   for (int epoch = 0; epoch < NUM_EPOCHS; epoch++) {
-//     loss = 0.0;
-//     for (int iter = 0; iter < NUM_ITERS; iter++) {
-//       updateXBatch(true);
-//       loss += iterate(xBatch);
-//     }
-//     loss /= NUM_ITERS;
-//     LOG_SHORT(LOG_INFO, "epoch: %d | loss: %f", epoch, loss);
-//   }
+void train() {
+  float loss;
+  // training
+  for (int epoch = 0; epoch < NUM_EPOCHS; epoch++) {
+    loss = 0.0;
+    for (int iter = 0; iter < NUM_ITERS; iter++) {
+      updateXBatch(true);
+      loss += iterate(xBatch);
+    }
+    loss /= NUM_ITERS;
+    Serial.print("epoch: "); Serial.print(epoch); Serial.print(" loss: "); Serial.println(loss);
+    // LOG_SHORT(LOG_INFO, "epoch: %d | loss: %f", epoch, loss);
+  }
 
-//   // testing
-//   updateXBatch(true);
-//   loss = iterate(xBatch);
-//   LOG_SHORT(LOG_INFO, "train sample: %f", loss);
+  // testing
+  updateXBatch(true);
+  loss = iterate(xBatch);
+  // LOG_SHORT(LOG_INFO, "train sample: %f", loss);
+  Serial.print("train sample: "); Serial.println(loss);
 
-//   updateXBatch(false);
-//   loss = iterate(xBatch);
+  updateXBatch(false);
+  loss = iterate(xBatch);
 
-//   LOG_SHORT(LOG_INFO, "test sample: %f", loss);
-// }
+  // LOG_SHORT(LOG_INFO, "test sample: %f", loss);
+  Serial.print("test sample: "); Serial.println(loss);
+}
 
 void blePeripheralConnectHandler(BLEDevice central) {
   // central connected event handler
@@ -289,6 +292,7 @@ void send() {
   sendWeightsBuffer.rowIndex = rowIndex;
   sendWeightsBuffer.colIndex = colIndex;
   sendWeightsBuffer.biasFlag = biasFlag;
+  sendWeightsBuffer.stopFlag = stopFlag;
 
   if (!biasFlag) {
     sendWeightsBatch();
@@ -328,6 +332,7 @@ void receive() {
   rowIndex = receiveWeightsBuffer.rowIndex;
   colIndex = receiveWeightsBuffer.colIndex;
   biasFlag = receiveWeightsBuffer.biasFlag;
+  // stopFlag = receiveWeightsBuffer.stopFlag;
 
   if (!biasFlag) {
     colIndex += BLE_NUM_WEIGHTS;
@@ -367,6 +372,8 @@ void receive() {
         colIndex = 0;
 
         biasFlag = false;
+        stopFlag = true;
+        sendFlag = true;
       }
     }
   }
@@ -401,6 +408,8 @@ void sendWeightsBatch() {
   Serial.println(colIndex);
   Serial.print("bias flag: ");
   Serial.println(biasFlag);
+  Serial.print("stop flag: ");
+  Serial.println(stopFlag);
   Serial.println("-----");
 }
 
@@ -437,6 +446,8 @@ void receiveWeightsBatch() {
   Serial.println(colIndex);
   Serial.print("bias flag: ");
   Serial.println(biasFlag);
+  Serial.print("stop flag: ");
+  Serial.println(stopFlag);
   Serial.println("-----");
 }
 
@@ -488,6 +499,8 @@ void sendBiasBatch() {
   Serial.println(colIndex);
   Serial.print("bias flag: ");
   Serial.println(biasFlag);
+  Serial.print("stop flag: ");
+  Serial.println(stopFlag);
   Serial.println("-----");
 }
 
@@ -523,6 +536,8 @@ void receiveBiasBatch() {
   Serial.println(colIndex);
   Serial.print("bias flag: ");
   Serial.println(biasFlag);
+  Serial.print("stop flag: ");
+  Serial.println(stopFlag);
   Serial.println("-----");
 }
 
@@ -594,23 +609,29 @@ void setup() {
 }
 
 void loop() {
-  BLE.poll(1000);
-  if (sendFlag) {
-    // sendWeights();
-    //sendWeightsBatch();
-    sendSyncFlag();
-    Serial.println("sending weights");
-    // sendFlag = false;
+  if (!stopFlag) {
+    BLE.poll();
+    if (sendFlag) {
+      // sendWeights();
+      //sendWeightsBatch();
+      sendSyncFlag();
+      Serial.println("sending weights");
+      // sendFlag = false;
+    }
+
+    if (writeCharacteristic.written()) {
+      sendFlag = false;
+
+      receive();
+      send();
+
+      delay(10);
+    }
+  } else {
+    Serial.println("training...");
+    train();
+    // delay(5000);
+    stopFlag = false;
   }
 
-  if (writeCharacteristic.written()) {
-    sendFlag = false;
-
-    receive();
-    send();
-
-    delay(10);
-  }
-  // train();
-  // delay(5000);
 }
