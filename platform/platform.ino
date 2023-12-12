@@ -83,6 +83,8 @@ void loop() {
         if(incoming.header.magic[0] == 0) {
             break;
         }
+
+        LOG_SHORT(LOG_DEBUG,"Received packet with %d byte payload",incoming.header.size);
         
         switch(incoming.header.command) {
             case Cmd::GET_FRAME:
@@ -95,20 +97,30 @@ void loop() {
                     break;
                 }
 
+                LOG_SHORT(LOG_DEBUG,"Received %dx%d feature vector",feature_vector->metadata.rows,feature_vector->metadata.cols);
                 if(feature_vector != nullptr) {
                     free(feature_vector);
+                    LOG_SHORT(LOG_DEBUG,"Old feature vector discarded");
                 }
 
                 feature_vector = (RichMatrix *) incoming.data;
-                LOG_SHORT(LOG_DEBUG,"Received %dx%d feature vector",feature_vector->metadata.rows,feature_vector->metadata.cols);
                 should_free = false;
+
+                // Do the training
+                train();
+                break;
+            
+            default:
+                LOG_SHORT(LOG_WARNING,"Received unknown command %d",incoming.header.command);
                 break;
         }
 
         // Free the data after we are done
-        if(incoming.data != nullptr) {
+        if(incoming.data != nullptr && should_free) {
+            LOG_SHORT(LOG_DEBUG,"Freeing incoming data");
             free(incoming.data);
         }
+
     }
 
     // Handle interrupts
