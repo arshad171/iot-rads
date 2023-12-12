@@ -22,6 +22,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import QThread, pyqtSignal, pyqtSlot
 from image_data_generator_handler import ImageDataGeneratorHandler
+from image_data_generator import ImageDataGenerator
 
 from ui.glob import GLOBAL_SIGNALS
 
@@ -60,6 +61,8 @@ class MainWindow(QMainWindow):
         self.__ssel2 = self.findChild(QComboBox, "ssel2_cmb")
         self.__conn1_btn = self.findChild(QPushButton, "conn1_btn")
         self.__conn2_btn = self.findChild(QPushButton, "conn2_btn")
+        self.__pic_src_cmb = self.findChild(QComboBox,"src_pic_cmb")
+        self.__data_src_cmb = self.findChild(QComboBox,"src_dat_cmb")
 
         # List of attached arduino devices
         self.__devices = []
@@ -94,6 +97,9 @@ class MainWindow(QMainWindow):
 
         # Initialize the comboboxes
         self.refresh()
+    
+    def get_active_source(self) -> str:
+        return self.__data_src_cmb.currentText()
 
     # Signal handlers for UI-related actions
     @pyqtSlot(str)
@@ -135,7 +141,8 @@ class MainWindow(QMainWindow):
     @pyqtSlot()
     def get_frame(self):
         """ Sends a picture request to the arduino """
-        self.__handlers[0].send(Packet(None,Command.GET_FRAME,DataType.CMD))
+        idx = self.__pic_src_cmb.currentIndex()
+        self.__handlers[idx].send(Packet(None,Command.GET_FRAME,DataType.CMD))
 
     @pyqtSlot()
     def refresh(self):
@@ -174,7 +181,6 @@ class MainWindow(QMainWindow):
 
 class MainThread(QThread):
     """Main thread of the client"""
-
     INTERVAL = 0.5
 
     def __init__(self):
@@ -185,6 +191,7 @@ class MainThread(QThread):
         self.__stop_event = Event()
 
         # Setup the protocol handler
+        self.__curr_handler = -1
         self.__handlers = [
             Protocol(None),
             Protocol(None),
@@ -196,11 +203,15 @@ class MainThread(QThread):
             type_handlers.register_datatype_decoders(handler)
             type_handlers.register_datatype_encoders(handler)
 
-        self.__handlers[0].cmd_handlers[Command.GET_FEATURE_VECTOR.value[0]] = [
-            ImageDataGeneratorHandler(
-                "../images-data1/", self.__handler1, use_dynamic_mask=True
-            ).get_next_sample
-        ]
+            # Register internal command handlers
+            handler.register_cmd_direct(Command.GET_FEATURE_VECTOR,self.__provide_feature_vector)
+            handler.register_cmd_direct(Command.SET_FEATURE_VECTOR,self.__receive_feature_vector)
+
+        # Prepare the data generator
+        self.__generator = ImageDataGenerator("../images-data1/",use_dynamic_mask=True)
+
+        # This will store the feature vector received by the embedder
+        self.__feature_vector = None
 
         # Spawn the window
         self.__window = MainWindow(self.__handlers,self.INTERVAL)
@@ -209,10 +220,10 @@ class MainThread(QThread):
         """Main loop of the client"""
 
         while not self.__stop_event.is_set():
-            if self.__handlers[0].has_backend():
-                self.__handlers[0].handle()
-            if self.__handlers[1].has_backend():
-                self.__handlers[1].handle()
+            for i,handler in enumerate(self.__handlers):
+                self.__curr_handler = i
+                if handler.has_backend():
+                    handler.handle()
             time.sleep(self.INTERVAL)
 
         self.__handlers[0].stop()
@@ -221,3 +232,17 @@ class MainThread(QThread):
     def stop(self):
         """Stop the protocol handler"""
         self.__stop_event.set()
+
+    # Protocol handling
+    def __receive_feature_vector(self, data: np.ndarray):
+        self.__feature_vector = data
+
+    def __provide_feature_vector(self, data: None):
+        src = self.__window.get_active_source()
+        if src == "Arduino":
+            # We get the feature vector from arduino
+            pass
+        elif src == "Client":
+            # We use the internal data generator
+            x,y = self.__generator.get_next_sample()
+            self.__handlers[self.__curr_handler].send(Packet(x,Command.SET_FEATURE_VECTOR,DataType.MAT))

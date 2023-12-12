@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1051</width>
-    <height>517</height>
+    <width>1053</width>
+    <height>555</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,7 +20,11 @@
       <item>
        <layout class="QHBoxLayout" name="tools1_lyt">
         <item>
-         <widget class="QComboBox" name="ssel1_cmb"/>
+         <widget class="QComboBox" name="ssel1_cmb">
+          <property name="placeholderText">
+           <string>Select Serial Device</string>
+          </property>
+         </widget>
         </item>
         <item>
          <widget class="QPushButton" name="conn1_btn">
@@ -50,7 +54,11 @@
       <item>
        <layout class="QHBoxLayout" name="tools2_lyt">
         <item>
-         <widget class="QComboBox" name="ssel2_cmb"/>
+         <widget class="QComboBox" name="ssel2_cmb">
+          <property name="placeholderText">
+           <string>Select Serial Device</string>
+          </property>
+         </widget>
         </item>
         <item>
          <widget class="QPushButton" name="conn2_btn">
@@ -96,10 +104,77 @@
           </property>
           <layout class="QVBoxLayout" name="verticalLayout">
            <item>
-            <widget class="QPushButton" name="refresh_btn">
-             <property name="text">
-              <string>Refresh Serial Devices</string>
+            <widget class="QGroupBox" name="sources_grp">
+             <property name="title">
+              <string>Sources</string>
              </property>
+             <layout class="QVBoxLayout" name="verticalLayout_2">
+              <item>
+               <layout class="QHBoxLayout" name="src_pic_lyt">
+                <item>
+                 <widget class="QLabel" name="src_pic_lbl">
+                  <property name="maximumSize">
+                   <size>
+                    <width>80</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
+                  <property name="frameShape">
+                   <enum>QFrame::NoFrame</enum>
+                  </property>
+                  <property name="text">
+                   <string>Picture</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QComboBox" name="src_pic_cmb">
+                  <item>
+                   <property name="text">
+                    <string>Arduino 1</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Arduino 2</string>
+                   </property>
+                  </item>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="src_dat_lyt">
+                <item>
+                 <widget class="QLabel" name="src_dat_lbl">
+                  <property name="maximumSize">
+                   <size>
+                    <width>80</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
+                  <property name="text">
+                   <string>Descriptor</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QComboBox" name="src_dat_cmb">
+                  <item>
+                   <property name="text">
+                    <string extracomment="The data comes from the Devices">Arduino</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string extracomment="The data comes from the PC">Client</string>
+                   </property>
+                  </item>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
             </widget>
            </item>
            <item>
@@ -116,6 +191,20 @@
             <widget class="QPushButton" name="shutter_btn">
              <property name="text">
               <string>Get Picture</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="Line" name="line">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="refresh_btn">
+             <property name="text">
+              <string>Refresh Serial Devices</string>
              </property>
             </widget>
            </item>
