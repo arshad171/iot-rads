@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>855</width>
-    <height>509</height>
+    <width>1051</width>
+    <height>517</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,17 +16,61 @@
   <widget class="QWidget" name="content_lyt">
    <layout class="QHBoxLayout" name="horizontalLayout">
     <item>
-     <widget class="QPlainTextEdit" name="log_txt">
-      <property name="acceptDrops">
-       <bool>false</bool>
-      </property>
-      <property name="undoRedoEnabled">
-       <bool>false</bool>
-      </property>
-      <property name="readOnly">
-       <bool>true</bool>
-      </property>
-     </widget>
+     <layout class="QVBoxLayout" name="pane1_lyt">
+      <item>
+       <layout class="QHBoxLayout" name="tools1_lyt">
+        <item>
+         <widget class="QComboBox" name="ssel1_cmb"/>
+        </item>
+        <item>
+         <widget class="QPushButton" name="conn1_btn">
+          <property name="maximumSize">
+           <size>
+            <width>30</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>C</string>
+          </property>
+          <property name="flat">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QPlainTextEdit" name="log1_txt"/>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QVBoxLayout" name="pane2_lyt">
+      <item>
+       <layout class="QHBoxLayout" name="tools2_lyt">
+        <item>
+         <widget class="QComboBox" name="ssel2_cmb"/>
+        </item>
+        <item>
+         <widget class="QPushButton" name="conn2_btn">
+          <property name="maximumSize">
+           <size>
+            <width>30</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>C</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QPlainTextEdit" name="log2_txt"/>
+      </item>
+     </layout>
     </item>
     <item>
      <layout class="QHBoxLayout" name="horz_lyt">
@@ -52,7 +96,17 @@
           </property>
           <layout class="QVBoxLayout" name="verticalLayout">
            <item>
+            <widget class="QPushButton" name="refresh_btn">
+             <property name="text">
+              <string>Refresh Serial Devices</string>
+             </property>
+            </widget>
+           </item>
+           <item>
             <widget class="QPushButton" name="save_btn">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
              <property name="text">
               <string>Save Picture...</string>
              </property>
