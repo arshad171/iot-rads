@@ -73,7 +73,6 @@ class MainWindow(QMainWindow):
 
         # Register global signal handlers
         GLOBAL_SIGNALS.status_signal.connect(self.status_update)
-        GLOBAL_SIGNALS.flush_log_signal.connect(self.flush_log)
 
         # Register UI signal handlers
         self.__save_btn.clicked.connect(self.save_picture)
@@ -105,11 +104,6 @@ class MainWindow(QMainWindow):
     def append_log2(self,log: str):
         """ Append log lines in the log pane """
         self.__log2_txt.appendPlainText(log)
-
-    @pyqtSlot()
-    def flush_log(self):
-        """ Clear the log pane """
-        self.__log1_txt.clear()
 
     @pyqtSlot(str)
     def status_update(self,status: str):
@@ -186,6 +180,7 @@ class MainThread(QThread):
 
         # Setup the protocol handler
         self.__handler1 = Protocol(None)
+        self.__handler1.send()
         cmd_handlers.register_command_handlers(self.__handler1)
         type_handlers.register_datatype_decoders(self.__handler1)
         type_handlers.register_datatype_encoders(self.__handler1)

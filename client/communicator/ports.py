@@ -72,7 +72,6 @@ class SerialChannel(Backend):
 
         # Clear the window
         GLOBAL_SIGNALS.status_signal.emit("Serial Port open")
-        GLOBAL_SIGNALS.flush_log_signal.emit()
 
     def close(self):
         try:
