@@ -1,9 +1,13 @@
 #include "settings/dnn.h"
-// #include "src/utils/common.h"
-// #include "src/camera/camera.h"
+#include "src/utils/common.h"
+#include "src/camera/camera.h"
+
+// Communication stack
+#include "src/communication/serial/serial.h"
+#include "src/communication/protocol.h"
 
 // Platform settings
-// #include "settings/device.h"
+#include "settings/device.h"
 
 // NN Layers
 #include "src/dnn/layers/linear.h"
@@ -12,7 +16,7 @@
 
 // External libraries
 #include <ArduinoBLE.h>
-// #include <Arduino_OV767X.h>
+#include <Arduino_OV767X.h>
 #include <BasicLinearAlgebra.h>
 
 const int BLE_NUM_WEIGHTS = 25;
@@ -46,7 +50,7 @@ const float momentum = MOMENTUM;
 const float learning_rate = LEARNING_RATE;
 const int batch_size = BATCH_SIZE;
 const int NUM_TRAINING_DATA = 100;
-const int NUM_EPOCHS = 1;
+const int NUM_EPOCHS = 10;
 const int NUM_ITERS = int(NUM_TRAINING_DATA / batch_size);
 
 // m, n, N
@@ -501,34 +505,32 @@ void receiveBiasBatch() {
 
 void setup() {
   // Setup the board's status indicators
-  // PINMODE(LEDR, OUTPUT);
-  // PINMODE(LEDG, OUTPUT);
-  // PINMODE(LEDB, OUTPUT);
-  // PINMODE(LED_PWR, OUTPUT);
-  // DWRITE(LEDR, 1);
-  // DWRITE(LEDG, 1);
-  // DWRITE(LEDB, 1);
-  // DWRITE(LED_PWR, 0);
+  PINMODE(LEDR, OUTPUT);
+  PINMODE(LEDG, OUTPUT);
+  PINMODE(LEDB, OUTPUT);
+  PINMODE(LED_PWR, OUTPUT);
+  DWRITE(LEDR, 1);
+  DWRITE(LEDG, 1);
+  DWRITE(LEDB, 1);
+  DWRITE(LED_PWR, 0);
 
   // Initialize serial port
-  // SP.initialize(BAUD_RATE, 1000);
+  SP.initialize(BAUD_RATE, 1000);
 
   // Setup logging
-  // set_log_lvl(LOG_LEVEL);
-  // toggle_logs(true);
+  set_log_lvl(LOG_LEVEL);
+  toggle_logs(true);
 
   // Wait on the serial and notify user
-  // DWRITE(LEDB, 0);
-  // SP.blocking_wait(0);
-  // DWRITE(LEDB, 1);
+  DWRITE(LEDB, 0);
+  SP.blocking_wait(0);
+  DWRITE(LEDB, 1);
 
   // Greet the user and present hardware info
-  // LOG_SHORT(LOG_INFO, "Railway Anomaly Detection System v%s", FW_VERSION);
+  LOG_SHORT(LOG_INFO, "Railway Anomaly Detection System v%s", FW_VERSION);
 
   // Tell the user we completed setup
-  // DWRITE(LED_PWR, 1);
-
-  Serial.begin(9600);
+  DWRITE(LED_PWR, 1);
 
   // BLE initialization
   // begin initialization
