@@ -1,5 +1,6 @@
 """ Types, Metadata, Descriptors and Containers for the protocol """
 
+from typing import Any
 from enum import Enum
 import struct
 
@@ -62,13 +63,16 @@ class Packet:
     format_thin: str = "<8sIII"
 
     # Used to build a packet that shall be sent
-    def __init__(self, data: bytes, command: Command, dtype: DataType):
+    def __init__(self, data: Any, command: Command, dtype: DataType):
         self.data = data
         self.command = command
         self.dtype = dtype
 
     def serialize(self) -> bytes:
         """Transform the packet into a byte array ready to be transmitted"""
+        if self.data is not None and not isinstance(self.data,bytes):
+            raise ValueError(f"Required convertion before sending {str(type(self.data))}")
+
         if self.data is not None:
             return struct.pack(Packet.format_payload.format(len(self.data)), self.magic, self.command.id, len(self.data), self.dtype.id, *self.data)
         else:

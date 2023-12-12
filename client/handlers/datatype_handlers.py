@@ -8,17 +8,17 @@ from ui.glob import GLOBAL_SIGNALS
 
 from communicator.protocol import Protocol,DataType
 
-def register_datatype_handlers(handler: Protocol):
-    """ Register type handlers for the protocol """
-    @handler.register_type(dtype=DataType.LOG)
+def register_datatype_decoders(handler: Protocol):
+    """ Register decoders for the protocol """
+    @handler.register_decoder(dtype=DataType.LOG)
     def decode_log(data: bytes):
         """ Decode the bytes into a string """
         return data.decode("ascii")
 
 
-    @handler.register_type(dtype=DataType.MAT)
+    @handler.register_decoder(dtype=DataType.MAT)
     def decode_mat(data: bytes):
-        """ Transform the arduino matrix into a np matrix """
+        """ Decode the arduino matrix into a np matrix """
         matrix_data_types = {
             0: "b", # TYPE_INT8
             1: "B", # TYPE_UINT8
@@ -36,9 +36,9 @@ def register_datatype_handlers(handler: Protocol):
         elements = struct.unpack(f"<{r*c}{matrix_data_types[t]}",data[6:])
         return np.reshape(elements,(r,c))
 
-    @handler.register_type(dtype=DataType.IMG)
+    @handler.register_decoder(dtype=DataType.IMG)
     def decode_img(data: bytes):
-        """ Transform the arduino image into a Pillow image """
+        """ Decode the arduino image into a Pillow image """
         image_cell_sizes = {1: "B", 2: "H", 4: "I"} # Different sizes of cell
         image_cell_types = {0: "YUV422", 1: "RGB444", 2: "RGB565", 4: "GRAYSCALE"}
 
@@ -67,3 +67,33 @@ def register_datatype_handlers(handler: Protocol):
             return Image.fromarray(l)
         else:
             raise ValueError(f"Image format '{image_cell_types[f]}' not implemented.")
+
+
+
+def register_datatype_encoders(handler: Protocol):
+    """ Register encoders for the protocol """
+    @handler.register_encoder(dtype=DataType.LOG)
+    def encode_log(data: str):
+        """ Encodes a string """
+        return data.encode("ascii")
+
+    @handler.register_encoder(dtype=DataType.MAT)
+    def encode_matrix(data: np.ndarray):
+        """ Encodes a numpy matrix """
+        if data.ndim != 2:
+            raise ValueError(f"Unable to convert NP array with {data.ndim} dimensions")
+        r,c = data.shape
+
+        matrix_data_types = {
+            "int8": ("b",0),   # TYPE_INT8
+            "uint8": ("B",1),  # TYPE_UINT8
+            "int16": ("h",2),  # TYPE_INT16
+            "uint16": ("H",3), # TYPE_UINT16
+            "int32": ("i",4),  # TYPE_INT32
+            "uint32": ("I",5), # TYPE_UINT32
+            "float32": ("f",6) # TYPE_FLOAT32
+        }
+
+        s_type,type_code = matrix_data_types[str(data.dtype)]
+        fstr = f"<HHH{data.size}{s_type}"
+        return struct.pack(fstr,r,c,type_code,*data.flatten(order="c"))
