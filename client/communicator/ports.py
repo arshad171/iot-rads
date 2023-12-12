@@ -20,7 +20,6 @@ from exceptions import (
 
 class Backend(ABC):
     """ Abstract implementation of a P2P communication backend """
-
     @abstractmethod
     def open(self):
         """ Opens the channel """
@@ -28,6 +27,10 @@ class Backend(ABC):
     @abstractmethod
     def close(self):
         """ Closes the channel """
+
+    @abstractmethod
+    def abort(self):
+        """ Aborts any connection attempt """
 
     @abstractmethod
     def send_packet(self, packet: Packet):
@@ -45,6 +48,8 @@ class Backend(ABC):
 class SerialChannel(Backend):
     """ Implements a serial backend """
     def __init__(self, path: str = None, baud: int = 9600, timeout: float = 1):
+        self.__abort_event = Event()
+
         if path is None:
             raise ValueError("Invalid path specified for the serial port")
 
@@ -55,14 +60,16 @@ class SerialChannel(Backend):
 
     def open(self):
         GLOBAL_SIGNALS.status_signal.emit("Opening Serial Port")
-        while not self.__port.is_open:
+        self.__abort_event.clear()
+
+        while not self.__port.is_open and not self.__abort_event.is_set():
             try:
                 self.__port = Serial(self.__path,self.__baud,timeout=self.__tout,parity=PARITY_NONE,
                                      bytesize=EIGHTBITS,stopbits=STOPBITS_ONE)
                 continue
             except SerialException:
-                time.sleep(self.__tout)
-    
+                pass
+
         # Clear the window
         GLOBAL_SIGNALS.status_signal.emit("Serial Port open")
         GLOBAL_SIGNALS.flush_log_signal.emit()
@@ -70,8 +77,12 @@ class SerialChannel(Backend):
     def close(self):
         try:
             self.__port.close()
+            GLOBAL_SIGNALS.status_signal.emit("Serial Port closed")
         except SerialException:
             GLOBAL_SIGNALS.status_signal.emit("Failed to close serial port.")
+
+    def abort(self):
+        self.__abort_event.set()
 
     def send_packet(self, packet: Packet):
         try:
@@ -156,7 +167,6 @@ class Port(Thread):
             except Exception as e: # pylint: disable=broad-except
                 GLOBAL_SIGNALS.status_signal.emit("Unknown exception while handling serial communication!")
                 print(e)
-
                 self.stop()
 
             # Take a break!
@@ -170,6 +180,9 @@ class Port(Thread):
     def stop(self):
         """ Stops the mailbox """
         self.__stop_event.set()
+
+        # In case the backend is attempting connection
+        self.__backend.abort()
 
     def stopped(self) -> bool:
         """ Returns whether the mailbox has stopped and the port has been closed """
