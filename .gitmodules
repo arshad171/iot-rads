@@ -1,0 +1,3 @@
+[submodule "image-embedder/libs/tflite-micro"]
+	path = image-embedder/libs/tflite-micro
+	url = https://github.com/tensorflow/tflite-micro-arduino-examples
