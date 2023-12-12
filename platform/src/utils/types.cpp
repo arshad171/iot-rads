@@ -1,33 +1,36 @@
 #include "../utils/common.h"
 #include "types.h"
 
-size_t getRichMatrixSize(RichMatrix *matrix) {
-    uint16_t r = matrix->metadata.rows;
-    uint16_t c = matrix->metadata.cols;
-
-    // Retrieve element size
-    size_t element_size;
-    switch(matrix->metadata.type) {
+size_t matrixTypeToSize(MatrixType type) {
+    switch(type) {
         case MatrixType::TYPE_INT8:
         case MatrixType::TYPE_UINT8:
-            element_size = 1;
+            return 1;
             break;
         case MatrixType::TYPE_INT16:
         case MatrixType::TYPE_UINT16:
-            element_size = 2;
+            return 2;
             break;
         case MatrixType::TYPE_INT32:
         case MatrixType::TYPE_UINT32:
         case MatrixType::TYPE_FLOAT32:
-            element_size = 4;
+            return 4;
             break;
         default:
             // If we get here we're screwed but we try to salvage it
             LOG(LOG_ERROR,"Invalid matrix data type specified!");
-            element_size = 4;
+            return 4;
     }
+}
 
-    return sizeof(MatrixMetadata) + r*c*element_size;
+size_t getRichMatrixSize(RichMatrix *matrix) {
+    uint16_t r = matrix->metadata.rows;
+    uint16_t c = matrix->metadata.cols;
+    return sizeof(MatrixMetadata) + r*c*matrixTypeToSize(matrix->metadata.type);
+}
+
+size_t getRichMatrixSize(uint16_t r, uint16_t c, MatrixType t) {
+    return sizeof(MatrixMetadata) + r*c*matrixTypeToSize(t);
 }
 
 RichImage *initRichImage(uint16_t w, uint16_t h, byte f, size_t d) {

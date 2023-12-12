@@ -1,6 +1,7 @@
 #pragma once
 #include <Arduino.h>
 #include <BasicLinearAlgebra.h>
+#include "common.h"
 
 enum MatrixType : uint16_t {
     TYPE_INT8,
@@ -51,6 +52,7 @@ RichMatrix *BLAtoRichMatrix(BLA::Matrix<r,c,t> *matrix, MatrixType type) {
 }
 
 size_t getRichMatrixSize(RichMatrix *matrix);
+size_t getRichMatrixSize(uint16_t r, uint16_t c, MatrixType t);
 
 RichImage *initRichImage(uint16_t w, uint16_t h, byte f, size_t d);
 
