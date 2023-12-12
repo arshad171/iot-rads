@@ -20,6 +20,7 @@ const int BLE_NUM_WEIGHTS = 25;
 typedef struct __attribute__((packed)) {
   bool syncFlag = false;
   bool biasFlag = false;
+  bool stopFlag = false;
   int layerIndex;
   int rowIndex;
   int colIndex;
@@ -28,6 +29,9 @@ typedef struct __attribute__((packed)) {
 
 bool value = false;
 bool biasFlag = false;
+bool stopFlag = false;
+int trainflag = 0;
+
 int layerIndex = 1;
 int rowIndex, colIndex = 0;
 float avgWeightsBuffer[BLE_NUM_WEIGHTS] = { 0.0 };
@@ -212,7 +216,32 @@ void initialize() {
   dLdb3.Fill(0.0);
   dLdb4.Fill(0.0);
 }
+void train() {
+  float loss;
+  // training
+  for (int epoch = 0; epoch < NUM_EPOCHS; epoch++) {
+    loss = 0.0;
+    for (int iter = 0; iter < NUM_ITERS; iter++) {
+      updateXBatch(true);
+      loss += iterate(xBatch);
+    }
+    loss /= NUM_ITERS;
+    Serial.print("epoch: "); Serial.print(epoch); Serial.print(" loss: "); Serial.println(loss);
+    // LOG_SHORT(LOG_INFO, "epoch: %d | loss: %f", epoch, loss);
+  }
 
+  // testing
+  updateXBatch(true);
+  loss = iterate(xBatch);
+  // LOG_SHORT(LOG_INFO, "train sample: %f", loss);
+  Serial.print("train sample: "); Serial.println(loss);
+
+  updateXBatch(false);
+  loss = iterate(xBatch);
+
+  // LOG_SHORT(LOG_INFO, "test sample: %f", loss);
+  Serial.print("test sample: "); Serial.println(loss);
+}
 // void train() {
 //   float loss;
 //   // training
@@ -277,7 +306,7 @@ void BLEserviceConnect() {
   }
 }
 
-void BLEserviceExecution() {
+/* void BLEserviceExecution() {
   readCharacteristic = peripheral.characteristic("2A36");
   writeCharacteristic = peripheral.characteristic("2A37");
 
@@ -295,7 +324,7 @@ void BLEserviceExecution() {
     //Serial.println("Logging 3");
   }
   //Serial.println("Logging");
-}
+}*/
 
 void sendBiasBatch() {
   // sendWeightsBuffer.syncFlag = false;
@@ -446,8 +475,10 @@ void sendWeightsBatch() {
   Serial.println(rowIndex);
   Serial.print("col: ");
   Serial.println(colIndex);
-  Serial.print("flag: ");
-  Serial.println(sendWeightsBuffer.biasFlag);
+  Serial.print("bias flag: ");
+  Serial.println(biasFlag);
+  Serial.print("stop flag: ");
+  Serial.println(stopFlag);
   Serial.println("-----");
 }
 
@@ -536,12 +567,15 @@ void receiveWeightsBatchAvg() {
   Serial.println(rowIndex);
   Serial.print("col: ");
   Serial.println(colIndex);
-  Serial.print("flag: ");
-  Serial.println(receiveWeightsBuffer.biasFlag);
+  Serial.print("bias flag: ");
+  Serial.println(biasFlag);
+  Serial.print("stop flag: ");
+  Serial.println(stopFlag);
   Serial.println("-----");
 }
 
 void send() {
+  sendWeightsBuffer.stopFlag = stopFlag;
   sendWeightsBuffer.biasFlag = biasFlag;
   sendWeightsBuffer.layerIndex = layerIndex;
   sendWeightsBuffer.rowIndex = rowIndex;
@@ -556,6 +590,7 @@ void send() {
 void receive() {
   readCharacteristic.readValue((byte *)&receiveWeightsBuffer, sizeof(receiveWeightsBuffer));
 
+  stopFlag = receiveWeightsBuffer.stopFlag;
   biasFlag = receiveWeightsBuffer.biasFlag;
   layerIndex = receiveWeightsBuffer.layerIndex;
   rowIndex = receiveWeightsBuffer.rowIndex;
@@ -616,22 +651,63 @@ void loop() {
   readCharacteristic = peripheral.characteristic("2A36");
   writeCharacteristic = peripheral.characteristic("2A37");
 
-
+  
   if (readCharacteristic.subscribe()) {
     Serial.println("Subscribed to read characteristic");
   }
-  value =peripheral.connected();
-  while (value) {
-    if (readCharacteristic.valueUpdated()) {
-      receive();
-      send();
-      //Serial.println("Logging 2");
-      delay(10);
+  Serial.println("I am alive");
+  //if (!stopFlag){
+
+    value =peripheral.connected();
+    while (value) {
+      if (readCharacteristic.valueUpdated()) {
+        /*if (stopFlag && receiveWeightsBuffer.stopFlag){
+          receiveWeightsBuffer.stopFlag=false;
+          stopFlag = false;
+        }*/
+        receive();
+        send();
+        
+        //Serial.println("Logging 2");
+        delay(10);
+      }
+      //if (stopFlag){break;}
+      if (stopFlag){
+         //BLE.disconnect();
+        
+        if (trainflag == 0){
+          Serial.println("trainning!!!");
+          train();   
+          stopFlag = false;
+          receiveWeightsBuffer.stopFlag=false;
+        }
+        trainflag +=1;
+        if (trainflag > 1){
+          trainflag = 0;
+        }
+      }
+      Serial.println("Logging 3");
     }
-    //Serial.println("Logging 3");
-  }
-  Serial.println("Reboot log");
-  // peripheral disconnected, start scanning again
+  
+
+    //Serial.println("Reboot log");
+    delay(10);
+    // peripheral disconnected, start scanning again
+    //BLE.scanForUuid("19b10011-e8f2-537e-4f6c-d104768a1214");
+ // }
+  /*else{
+    BLE.disconnect();
+    Serial.println("trainning!!!");
+    train(); 
+    stopFlag = false;*/
+
+    //BLE.scanForUuid("19b10011-e8f2-537e-4f6c-d104768a1214");
+  //}
   BLE.scanForUuid("19b10011-e8f2-537e-4f6c-d104768a1214");
+  delay(10);
+  //Serial.println("Started trainning!!!");
+  //delay(5000);
+  //stopFlag = false;
+  
   // train();
 }
