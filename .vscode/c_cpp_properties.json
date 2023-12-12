@@ -13,12 +13,14 @@
                 // Arduino core for the Mbed 33 Nano BLE
                 "~/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/variants/ARDUINO_NANO33BLE",
                 "~/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/cores/arduino",
+                "~/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/cores/arduino/api",
                 "~/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/cores/arduino/mbed/**",
 
                 // Included libraries
                 "~/Arduino/libraries/Arduino_OV767X/src",
                 "~/Arduino/libraries/BasicLinearAlgebra",
                 "~/Arduino/libraries/ArduinoBLE/src",
+                "~/Arduino/libraries/Harvard_TinyMLx/src",
 
                 // Platform libraries
                 // "~/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/MLC/src",
@@ -33,7 +35,7 @@
                 // "~/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/USBHID/src",
                 // "~/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/USBMIDI",
                 // "~/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/USBMSD/src",
-                // "~/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/Wire",
+                "~/.arduino15/packages/arduino/hardware/mbed_nano/4.0.10/libraries/Wire",
 
                 // Standard library
                 "~/.arduino15/packages/arduino/tools/arm-none-eabi-gcc/7-2017q4/arm-none-eabi/include/c++/7.2.1",
