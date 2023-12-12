@@ -12,6 +12,9 @@
 // Our libraries
 #include "src/communication/serial/serial.h"
 #include "src/utils/logging.h"
+#include "src/utils/types.h"
+#include "src/utils/common.h"
+#include "src/communication/protocol.h"
 
 // Model
 #include "model_int8.h"
@@ -106,10 +109,18 @@ void loop() {
         // Ensure the output tensor size is as expected
         int output_length = output->bytes/sizeof(float);
         if (output_length == 100) {
-            LOG_SHORT(LOG_DEBUG,"Feature vector:");
-            for (int i = 0; i < output_length; i++) {
-                LOG_SHORT(LOG_DEBUG,"%.5f",output->data.f[i]);
-            }
+            // Construct the output vector as a matrix
+            size_t matrix_size = getRichMatrixSize(output_length,1,MatrixType::TYPE_FLOAT32);
+            RichMatrix *tensor = (RichMatrix *) memalloc(matrix_size);
+
+            // Fill in the matrix details
+            tensor->metadata.rows = output_length;
+            tensor->metadata.cols = 1;
+            tensor->metadata.type = MatrixType::TYPE_FLOAT32;
+            memcpy(tensor->data,output->data.f,output->bytes);
+
+            // Send the output vector
+            pack((byte *) tensor,matrix_size,DType::MAT,Cmd::SET_FEATURE_VECTOR,&SP);
         } else {
             LOG(LOG_WARNING,"Unexpected output tensor size.");
         }
