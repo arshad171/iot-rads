@@ -17,6 +17,7 @@ enum Cmd : byte { // Commands that can be sent to or received from other devices
     // Training data manipulation
     GET_FEATURE_VECTOR, // Request feature vector from embedder
     SET_FEATURE_VECTOR, // Response to previous request
+    NO_FEATURE_VECTOR,  // No feature vector available right now
     // Image manipulation
     GET_FRAME, // Request frame from camera device
     SET_FRAME, // Response to previous request
