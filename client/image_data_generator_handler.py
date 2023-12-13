@@ -33,13 +33,4 @@ class ImageDataGeneratorHandler(ImageDataGenerator):
             random.shuffle(self.images)
             print("shuffling")
 
-        print("sending features: ", x[0], x[1])
-
         return np.expand_dims(x.numpy(), axis=1)
-        # self.handler.send(
-        #     packet=Packet(
-        #         np.expand_dims(x.numpy(), axis=1),
-        #         command=Command.SET_FEATURE_VECTOR,
-        #         dtype=DataType.MAT,
-        #     )
-        # )

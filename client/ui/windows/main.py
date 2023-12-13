@@ -212,7 +212,7 @@ class MainWindow(QMainWindow):
 class MainThread(QThread):
     """Main thread of the client"""
 
-    INTERVAL = 0.5
+    INTERVAL = 0.1
 
     def __init__(self):
         # Initialize PyQt interface
@@ -281,7 +281,6 @@ class MainThread(QThread):
             pass
         elif src == "Client":
             # We use the internal data generator
-            print("got request")
             sample = self.__generator.get_next_sample()
             self.__handlers[self.__curr_handler].send(
                 Packet(sample, Command.SET_FEATURE_VECTOR, DataType.MAT)
