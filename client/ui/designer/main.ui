@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1053</width>
-    <height>555</height>
+    <width>1075</width>
+    <height>632</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -104,80 +104,6 @@
           </property>
           <layout class="QVBoxLayout" name="verticalLayout">
            <item>
-            <widget class="QGroupBox" name="sources_grp">
-             <property name="title">
-              <string>Sources</string>
-             </property>
-             <layout class="QVBoxLayout" name="verticalLayout_2">
-              <item>
-               <layout class="QHBoxLayout" name="src_pic_lyt">
-                <item>
-                 <widget class="QLabel" name="src_pic_lbl">
-                  <property name="maximumSize">
-                   <size>
-                    <width>80</width>
-                    <height>16777215</height>
-                   </size>
-                  </property>
-                  <property name="frameShape">
-                   <enum>QFrame::NoFrame</enum>
-                  </property>
-                  <property name="text">
-                   <string>Picture</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QComboBox" name="src_pic_cmb">
-                  <item>
-                   <property name="text">
-                    <string>Arduino 1</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>Arduino 2</string>
-                   </property>
-                  </item>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-              <item>
-               <layout class="QHBoxLayout" name="src_dat_lyt">
-                <item>
-                 <widget class="QLabel" name="src_dat_lbl">
-                  <property name="maximumSize">
-                   <size>
-                    <width>80</width>
-                    <height>16777215</height>
-                   </size>
-                  </property>
-                  <property name="text">
-                   <string>Descriptor</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QComboBox" name="src_dat_cmb">
-                  <item>
-                   <property name="text">
-                    <string extracomment="The data comes from the Devices">Arduino</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string extracomment="The data comes from the PC">Client</string>
-                   </property>
-                  </item>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-             </layout>
-            </widget>
-           </item>
-           <item>
             <widget class="QPushButton" name="save_btn">
              <property name="enabled">
               <bool>false</bool>
@@ -195,6 +121,33 @@
             </widget>
            </item>
            <item>
+            <layout class="QHBoxLayout" name="broll_lyt">
+             <item>
+              <widget class="QPushButton" name="broll_btn">
+               <property name="text">
+                <string>Take Picture Group...</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="broll_sbox">
+               <property name="maximumSize">
+                <size>
+                 <width>50</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="minimum">
+                <number>1</number>
+               </property>
+               <property name="value">
+                <number>10</number>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
             <widget class="Line" name="line">
              <property name="orientation">
               <enum>Qt::Horizontal</enum>
@@ -207,6 +160,80 @@
               <string>Refresh Serial Devices</string>
              </property>
             </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="sources_grp">
+          <property name="title">
+           <string>Sources</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_2">
+           <item>
+            <layout class="QHBoxLayout" name="src_pic_lyt">
+             <item>
+              <widget class="QLabel" name="src_pic_lbl">
+               <property name="maximumSize">
+                <size>
+                 <width>80</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="frameShape">
+                <enum>QFrame::NoFrame</enum>
+               </property>
+               <property name="text">
+                <string>Picture</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="src_pic_cmb">
+               <item>
+                <property name="text">
+                 <string>Arduino 1</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Arduino 2</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="src_dat_lyt">
+             <item>
+              <widget class="QLabel" name="src_dat_lbl">
+               <property name="maximumSize">
+                <size>
+                 <width>80</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>Descriptor</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="src_dat_cmb">
+               <item>
+                <property name="text">
+                 <string extracomment="The data comes from the Devices">Arduino</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string extracomment="The data comes from the PC">Client</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+            </layout>
            </item>
           </layout>
          </widget>

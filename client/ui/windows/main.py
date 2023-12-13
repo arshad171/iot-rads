@@ -19,6 +19,7 @@ from PyQt6.QtWidgets import (
     QFileDialog,
     QPushButton,
     QComboBox,
+    QSpinBox
 )
 from PyQt6.QtCore import QThread, pyqtSignal, pyqtSlot
 from image_data_generator_handler import ImageDataGeneratorHandler
@@ -42,6 +43,7 @@ class MainWindow(QMainWindow):
     __signal_append_log1 = pyqtSignal(str)
     __signal_append_log2 = pyqtSignal(str)
     __signal_picture_set = pyqtSignal(Image)
+    __signal_b_roll_set  = pyqtSignal(Image)
 
     def __init__(self,handlers: List[Protocol], interval: int):
         super().__init__() # Initialize the Qt interface
@@ -63,12 +65,18 @@ class MainWindow(QMainWindow):
         self.__conn2_btn = self.findChild(QPushButton, "conn2_btn")
         self.__pic_src_cmb = self.findChild(QComboBox,"src_pic_cmb")
         self.__data_src_cmb = self.findChild(QComboBox,"src_dat_cmb")
+        self.__broll_shutter = self.findChild(QPushButton,"broll_btn")
+        self.__broll_count = self.findChild(QSpinBox,"broll_sbox")
 
         # List of attached arduino devices
         self.__devices = []
 
         # Pictures received from Arduino
         self.__picture = None
+
+        # B-Rolls received from Arduibo
+        self.__broll_path = None
+        self.__broll_idx = None
 
         # Protocol handler (for sending commands)
         self.__interval = interval
@@ -78,6 +86,7 @@ class MainWindow(QMainWindow):
         self.__signal_append_log1.connect(self.append_log1)
         self.__signal_append_log2.connect(self.append_log2)
         self.__signal_picture_set.connect(self.picture_set)
+        self.__signal_b_roll_set.connect(self.handle_broll)
 
         # Register global signal handlers
         GLOBAL_SIGNALS.status_signal.connect(self.update_statusbar)
@@ -88,12 +97,15 @@ class MainWindow(QMainWindow):
         self.__refresh.clicked.connect(self.refresh)
         self.__conn1_btn.clicked.connect(self.connection1)
         self.__conn2_btn.clicked.connect(self.connection2)
+        self.__broll_shutter.clicked.connect(self.begin_broll)
 
         # Hook up signal handlers to the protocol
         self.__handlers[0].hook_cmd(Command.WRITE_LOG,self.__signal_append_log1)
         self.__handlers[0].hook_cmd(Command.SET_FRAME,self.__signal_picture_set)
+        self.__handlers[0].hook_cmd(Command.SET_BROLL,self.__signal_b_roll_set)
         self.__handlers[1].hook_cmd(Command.WRITE_LOG,self.__signal_append_log2)
         self.__handlers[1].hook_cmd(Command.SET_FRAME,self.__signal_picture_set)
+        self.__handlers[1].hook_cmd(Command.SET_BROLL,self.__signal_b_roll_set)
 
         # Initialize the comboboxes
         self.refresh()
@@ -132,9 +144,7 @@ class MainWindow(QMainWindow):
         if self.__picture is None:
             return
 
-        fname, _ = QFileDialog.getSaveFileName(
-            self, "Save picture as...", "", "PNG Images (*.png)"
-        )
+        fname,_ = QFileDialog.getSaveFileName(self, "Save picture as...", "", "PNG Images (*.png)")
         if fname:
             self.__picture.save(fname, "PNG")
 
@@ -177,6 +187,25 @@ class MainWindow(QMainWindow):
         else:
             self.__handlers[1].stop()
             self.__conn2_btn.setText("C")
+
+    @pyqtSlot()
+    def begin_broll(self):
+        """ Begins a B-Roll procedure """
+        self.__broll_path = QFileDialog.getExistingDirectory(self,"Select B-Roll directory")
+        if not self.__broll_path:
+            return
+        self.__broll_idx = 1
+
+        # Request B-Roll to the arduino
+        src = self.__pic_src_cmb.currentIndex()
+        self.__handlers[src].send(Packet(self.__broll_count.value().to_bytes(1,"little"),Command.GET_BROLL,DataType.DAT))
+
+    @pyqtSlot(Image)
+    def handle_broll(self,image: Image):
+        """ Handles receiving B-Roll footage """
+        self.picture_set(image)
+        self.__picture.save(os.path.join(self.__broll_path,f"{str(self.__broll_idx)}.png"), "PNG")
+        self.__broll_idx += 1
 
 
 class MainThread(QThread):
