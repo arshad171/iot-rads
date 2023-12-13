@@ -10,7 +10,7 @@ NetworkShape network;
 
 const float momentum = MOMENTUM;
 const float learning_rate = LEARNING_RATE;
-const int NUM_TRAINING_DATA = 100;
+const int num_training_data = NUM_TRAINING_DATA;
 const int NUM_EPOCHS = 10;
 const int NUM_ITERS = int(NUM_TRAINING_DATA / BATCH_SIZE);
 
