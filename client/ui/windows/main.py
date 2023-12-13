@@ -37,7 +37,6 @@ import handlers.datatype_handlers as type_handlers
 
 class MainWindow(QMainWindow):
     """Main window of the client"""
-
     # Define protocol-related signals
     # These must be statically declared
     __signal_append_log1 = pyqtSignal(str)
@@ -109,8 +108,9 @@ class MainWindow(QMainWindow):
 
         # Initialize the comboboxes
         self.refresh()
-    
+
     def get_active_source(self) -> str:
+        """ Returns the index of the active data source """
         return self.__data_src_cmb.currentText()
 
     # Signal handlers for UI-related actions
@@ -237,7 +237,7 @@ class MainThread(QThread):
             handler.register_cmd_direct(Command.SET_FEATURE_VECTOR,self.__receive_feature_vector)
 
         # Prepare the data generator
-        self.__generator = ImageDataGenerator("../images-data1/",use_dynamic_mask=True)
+        self.__generator = ImageDataGeneratorHandler("../images-data1/",use_dynamic_mask=True)
 
         # This will store the feature vector received by the embedder
         self.__feature_vector = None
@@ -273,5 +273,5 @@ class MainThread(QThread):
             pass
         elif src == "Client":
             # We use the internal data generator
-            x,y = self.__generator.get_next_sample()
+            x,_ = self.__generator.get_next_sample()
             self.__handlers[self.__curr_handler].send(Packet(x,Command.SET_FEATURE_VECTOR,DataType.MAT))
