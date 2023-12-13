@@ -10,7 +10,6 @@ class ImageDataGeneratorHandler(ImageDataGenerator):
     def __init__(
         self,
         dataset_path,
-        handler: Protocol,
         mask_path=None,
         use_dynamic_mask=True,
         image_size=[224, 224],
@@ -18,7 +17,7 @@ class ImageDataGeneratorHandler(ImageDataGenerator):
     ) -> None:
         super().__init__(dataset_path, mask_path, use_dynamic_mask, image_size, downsample_factor)
 
-        self.handler: Protocol = handler
+        # self.handler: Protocol = handler
 
     def get_next_sample(self, raw=False) -> Tuple[np.ndarray, np.ndarray] | bytearray:
         """
@@ -35,10 +34,12 @@ class ImageDataGeneratorHandler(ImageDataGenerator):
             print("shuffling")
 
         print("sending features: ", x[0], x[1])
-        self.handler.send(
-            packet=Packet(
-                np.expand_dims(x.numpy(), axis=1),
-                command=Command.SET_FEATURE_VECTOR,
-                dtype=DataType.MAT,
-            )
-        )
+
+        return np.expand_dims(x.numpy(), axis=1)
+        # self.handler.send(
+        #     packet=Packet(
+        #         np.expand_dims(x.numpy(), axis=1),
+        #         command=Command.SET_FEATURE_VECTOR,
+        #         dtype=DataType.MAT,
+        #     )
+        # )

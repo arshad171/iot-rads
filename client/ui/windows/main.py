@@ -23,7 +23,6 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import QThread, pyqtSignal, pyqtSlot
 from image_data_generator_handler import ImageDataGeneratorHandler
-from image_data_generator import ImageDataGenerator
 
 from ui.glob import GLOBAL_SIGNALS
 
@@ -44,9 +43,9 @@ class MainWindow(QMainWindow):
     __signal_picture_set = pyqtSignal(Image)
     __signal_b_roll_set  = pyqtSignal(Image)
 
-    def __init__(self,handlers: List[Protocol], interval: int):
-        super().__init__() # Initialize the Qt interface
-        uic.loadUi(os.path.join("ui","designer","main.ui"),self)
+    def __init__(self, handlers: List[Protocol], interval: int):
+        super().__init__()  # Initialize the Qt interface
+        uic.loadUi(os.path.join("ui", "designer", "main.ui"), self)
         self.show()
         self.setWindowTitle("RADS Client")
 
@@ -101,10 +100,8 @@ class MainWindow(QMainWindow):
         # Hook up signal handlers to the protocol
         self.__handlers[0].hook_cmd(Command.WRITE_LOG,self.__signal_append_log1)
         self.__handlers[0].hook_cmd(Command.SET_FRAME,self.__signal_picture_set)
-        self.__handlers[0].hook_cmd(Command.SET_BROLL,self.__signal_b_roll_set)
         self.__handlers[1].hook_cmd(Command.WRITE_LOG,self.__signal_append_log2)
         self.__handlers[1].hook_cmd(Command.SET_FRAME,self.__signal_picture_set)
-        self.__handlers[1].hook_cmd(Command.SET_BROLL,self.__signal_b_roll_set)
 
         # Initialize the comboboxes
         self.refresh()
@@ -125,14 +122,14 @@ class MainWindow(QMainWindow):
         self.__log2_txt.appendPlainText(log)
 
     @pyqtSlot(str)
-    def update_statusbar(self,status: str):
-        """ Update the status text """
+    def update_statusbar(self, status: str):
+        """Update the status text"""
         print(status)
         self.__status.showMessage(status)
 
     @pyqtSlot(Image)
-    def picture_set(self,image: Image):
-        """ Sets the content of the image frame """
+    def picture_set(self, image: Image):
+        """Sets the content of the image frame"""
         self.__picture = image
         self.__frame.clear()
         self.__frame.setPixmap(self.__picture.toqpixmap())
@@ -150,9 +147,9 @@ class MainWindow(QMainWindow):
 
     @pyqtSlot()
     def get_frame(self):
-        """ Sends a picture request to the arduino """
+        """Sends a picture request to the arduino"""
         idx = self.__pic_src_cmb.currentIndex()
-        self.__handlers[idx].send(Packet(None,Command.GET_FRAME,DataType.CMD))
+        self.__handlers[idx].send(Packet(None, Command.GET_FRAME, DataType.CMD))
 
     @pyqtSlot()
     def refresh(self):
@@ -170,9 +167,11 @@ class MainWindow(QMainWindow):
 
     @pyqtSlot()
     def connection1(self):
-        """ Handles request to change the connection status of the first pane """
+        """Handles request to change the connection status of the first pane"""
         if not self.__handlers[0].has_backend():
-            self.__handlers[0].set_backend(SerialChannel(self.__ssel1.currentText(),19200,self.__interval))
+            self.__handlers[0].set_backend(
+                SerialChannel(self.__ssel1.currentText(), 19200, self.__interval)
+            )
             self.__conn1_btn.setText("D")
         else:
             self.__handlers[0].stop()
@@ -180,9 +179,11 @@ class MainWindow(QMainWindow):
 
     @pyqtSlot()
     def connection2(self):
-        """ Handles request to change the connection status of the second pane """
+        """Handles request to change the connection status of the second pane"""
         if not self.__handlers[1].has_backend():
-            self.__handlers[1].set_backend(SerialChannel(self.__ssel2.currentText(),19200,self.__interval))
+            self.__handlers[1].set_backend(
+                SerialChannel(self.__ssel2.currentText(), 19200, self.__interval)
+            )
             self.__conn2_btn.setText("D")
         else:
             self.__handlers[1].stop()
@@ -210,6 +211,7 @@ class MainWindow(QMainWindow):
 
 class MainThread(QThread):
     """Main thread of the client"""
+
     INTERVAL = 0.5
 
     def __init__(self):
@@ -233,17 +235,23 @@ class MainThread(QThread):
             type_handlers.register_datatype_encoders(handler)
 
             # Register internal command handlers
-            handler.register_cmd_direct(Command.GET_FEATURE_VECTOR,self.__provide_feature_vector)
-            handler.register_cmd_direct(Command.SET_FEATURE_VECTOR,self.__receive_feature_vector)
+            handler.register_cmd_direct(
+                Command.GET_FEATURE_VECTOR, self.__provide_feature_vector
+            )
+            handler.register_cmd_direct(
+                Command.SET_FEATURE_VECTOR, self.__receive_feature_vector
+            )
 
         # Prepare the data generator
-        self.__generator = ImageDataGeneratorHandler("../images-data1/",use_dynamic_mask=True)
+        self.__generator = ImageDataGeneratorHandler(
+            "../images-data1/", use_dynamic_mask=True
+        )
 
         # This will store the feature vector received by the embedder
         self.__feature_vector = None
 
         # Spawn the window
-        self.__window = MainWindow(self.__handlers,self.INTERVAL)
+        self.__window = MainWindow(self.__handlers, self.INTERVAL)
 
     def run(self):
         """Main loop of the client"""
@@ -273,5 +281,8 @@ class MainThread(QThread):
             pass
         elif src == "Client":
             # We use the internal data generator
-            x,_ = self.__generator.get_next_sample()
-            self.__handlers[self.__curr_handler].send(Packet(x,Command.SET_FEATURE_VECTOR,DataType.MAT))
+            print("got request")
+            sample = self.__generator.get_next_sample()
+            self.__handlers[self.__curr_handler].send(
+                Packet(sample, Command.SET_FEATURE_VECTOR, DataType.MAT)
+            )

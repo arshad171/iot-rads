@@ -19,9 +19,12 @@
 #include <Arduino_OV767X.h>
 #include <BasicLinearAlgebra.h>
 
+static RichMatrix *feature_vector = nullptr;
+
 const int BLE_NUM_WEIGHTS = 25;
 
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed))
+{
   bool syncFlag = false;
   bool biasFlag = false;
   bool stopFlag = false;
@@ -37,11 +40,11 @@ bool stopFlag = false;
 
 int layerIndex = 1;
 int rowIndex, colIndex = 0;
-float avgWeightsBuffer[BLE_NUM_WEIGHTS] = { 0.0 };
+float avgWeightsBuffer[BLE_NUM_WEIGHTS] = {0.0};
 
 WeightsBuffer sendWeightsBuffer, receiveWeightsBuffer;
 
-BLEService networkService("19B10011-E8F2-537E-4F6C-D104768A1214");  // Bluetooth® Low Energy LED Service
+BLEService networkService("19B10011-E8F2-537E-4F6C-D104768A1214"); // Bluetooth® Low Energy LED Service
 
 BLECharacteristic readCharacteristic("2A36", BLERead | BLEIndicate, sizeof(sendWeightsBuffer));
 BLECharacteristic writeCharacteristic("2A37", BLEWrite, sizeof(sendWeightsBuffer));
@@ -50,7 +53,7 @@ const float momentum = MOMENTUM;
 const float learning_rate = LEARNING_RATE;
 const int batch_size = BATCH_SIZE;
 const int NUM_TRAINING_DATA = 100;
-const int NUM_EPOCHS = 10;
+const int NUM_EPOCHS = 1;
 const int NUM_ITERS = int(NUM_TRAINING_DATA / batch_size);
 
 // m, n, N
@@ -66,8 +69,8 @@ const int out3 = 10;
 const int in4 = 10;
 const int out4 = FEATURE_DIM;
 
-const int inputLayersSizes[] = { in1, in2, in3, in4 };
-const int outputLayersSizes[] = { out1, out2, out3, out4 };
+const int inputLayersSizes[] = {in1, in2, in3, in4};
+const int outputLayersSizes[] = {out1, out2, out3, out4};
 
 LinearLayer<in1, out1, batch_size> lin1;
 ReLULayer<out1, batch_size> rel1;
@@ -110,25 +113,106 @@ BLA::Matrix<out2, 1> dLdb2;
 BLA::Matrix<out3, 1> dLdb3;
 BLA::Matrix<out4, 1> dLdb4;
 
-void updateXBatch(bool trainingData) {
-  for (int r = 0; r < xBatch.Rows; r++) {
-    for (int c = 0; c < xBatch.Cols; c++) {
-      if (trainingData) {
-        // get training data here, request from serial
-        xBatch(r, c) = float(random(-1000, 1000) / 1000.0);
-      } else {
-        // get test data here, request from serial
-        xBatch(r, c) = float(random(-2000, 2000) / 1000.0);
+void request_feature_vector()
+{
+  LOG_SHORT(LOG_DEBUG, "Requesting feature vector...");
+  pack(nullptr, 0, DType::CMD, Cmd::GET_FEATURE_VECTOR, &SP);
+}
+
+bool receive_feature_vector(int batchIndex)
+{
+  bool success = false;
+  bool awaitResponse = true;
+
+  for (int maxIters = 10; (maxIters > 0) && (awaitResponse); maxIters--)
+  {
+    Packet incoming = SP.recv();
+    bool should_free = true;
+
+    // // Stop when we process all incoming packets
+    if (incoming.header.magic[0] == 0)
+    {
+      continue;
+    }
+
+    LOG_SHORT(LOG_DEBUG, "Received packet with %d byte payload", incoming.header.size);
+
+    switch (incoming.header.command)
+    {
+    case Cmd::SET_FEATURE_VECTOR:
+    {
+      if (incoming.header.type != DType::MAT)
+      {
+        LOG(LOG_ERROR, "Received feature vector of wrong type %d", incoming.header.type);
+        break;
       }
+
+      LOG_SHORT(LOG_DEBUG, "Received %dx%d feature vector", feature_vector->metadata.rows, feature_vector->metadata.cols);
+      if (feature_vector != nullptr && should_free)
+      {
+        free(feature_vector);
+        LOG_SHORT(LOG_DEBUG, "Old feature vector discarded");
+      }
+
+      feature_vector = (RichMatrix *)incoming.data;
+
+      const int size = feature_vector->metadata.rows * feature_vector->metadata.cols;
+
+      LOG_SHORT(LOG_INFO, "size: %d", size);
+
+      float features[size];
+
+      memcpy(features, feature_vector->data, size * sizeof(float));
+
+      for (int r = 0; r < xBatch.Rows; r++)
+      {
+        xBatch(r, batchIndex) = features[r];
+      }
+
+      should_free = false; // DO NOT FREE! The training data stays until replaced
+      awaitResponse = false;
+      success = true;
+      break;
+    }
     }
   }
+  return success;
+}
+
+void updateXBatch(bool trainingData)
+{
+  for (int batchIndex = 0; batchIndex < xBatch.Cols; batchIndex++)
+  {
+    bool success = false;
+    while (!success)
+    {
+      request_feature_vector();
+      success = receive_feature_vector(batchIndex);
+    }
+    LOG_SHORT(LOG_DEBUG, "got batch");
+  }
+
+  // work with synthetic data
+
+  // for (int r = 0; r < xBatch.Rows; r++) {
+  //   for (int c = 0; c < xBatch.Cols; c++) {
+  //     if (trainingData) {
+  //       // get training data here, request from serial
+  //       xBatch(r, c) = float(random(-1000, 1000) / 1000.0);
+  //     } else {
+  //       // get test data here, request from serial
+  //       xBatch(r, c) = float(random(-2000, 2000) / 1000.0);
+  //     }
+  //   }
+  // }
 }
 
 /*
 do one forward and backward pass.
 returns the reconsturction error
 */
-float iterate(BLA::Matrix<in1, batch_size> x) {
+float iterate(BLA::Matrix<in1, batch_size> x)
+{
   float loss;
 
   // forward
@@ -195,7 +279,8 @@ float iterate(BLA::Matrix<in1, batch_size> x) {
   return loss;
 }
 
-void initialize() {
+void initialize()
+{
   xBatch.Fill(0.0);
 
   h1.Fill(0.0);
@@ -224,12 +309,16 @@ void initialize() {
   dLdb4.Fill(0.0);
 }
 
-void train() {
+void train()
+{
+  LOG_SHORT(LOG_DEBUG, "training for %d epoch(s)", NUM_EPOCHS);
   float loss;
   // training
-  for (int epoch = 0; epoch < NUM_EPOCHS; epoch++) {
+  for (int epoch = 0; epoch < NUM_EPOCHS; epoch++)
+  {
     loss = 0.0;
-    for (int iter = 0; iter < NUM_ITERS; iter++) {
+    for (int iter = 0; iter < NUM_ITERS; iter++)
+    {
       updateXBatch(true);
       loss += iterate(xBatch);
     }
@@ -248,52 +337,63 @@ void train() {
   LOG_SHORT(LOG_INFO, "test sample: %f", loss);
 }
 
-void blePeripheralConnectHandler(BLEDevice central) {
+void blePeripheralConnectHandler(BLEDevice central)
+{
   // central connected event handler
   LOG_SHORT(LOG_INFO, "BLE::connected event central: %s", central.address());
   BLE.advertise();
 }
 
-void blePeripheralDisconnectHandler(BLEDevice central) {
+void blePeripheralDisconnectHandler(BLEDevice central)
+{
   // central disconnected event handler
   LOG_SHORT(LOG_INFO, "BLE::disconnected event central: %s", central.address());
   BLE.advertise();
   sendFlag = true;
 }
 
-void sendSyncFlag() {
+void sendSyncFlag()
+{
   sendWeightsBuffer.syncFlag = true;
   sendWeightsBuffer.layerIndex = 1;
   sendWeightsBuffer.rowIndex = 0;
   sendWeightsBuffer.colIndex = 0;
-  for (int i = 0; i < BLE_NUM_WEIGHTS; i++) {
+  for (int i = 0; i < BLE_NUM_WEIGHTS; i++)
+  {
     sendWeightsBuffer.weights[i] = 0.0;
   }
   readCharacteristic.writeValue((byte *)&sendWeightsBuffer, sizeof(sendWeightsBuffer));
   LOG_SHORT(LOG_DEBUG, "BLE::sending sync packet");
 }
 
-
-void send() {
+void send()
+{
   sendWeightsBuffer.layerIndex = layerIndex;
   sendWeightsBuffer.rowIndex = rowIndex;
   sendWeightsBuffer.colIndex = colIndex;
   sendWeightsBuffer.biasFlag = biasFlag;
   sendWeightsBuffer.stopFlag = stopFlag;
 
-  if (!biasFlag) {
+  if (!biasFlag)
+  {
     sendWeightsBatch();
-  } else {
+  }
+  else
+  {
     sendBiasBatch();
   }
 }
 
-void receive() {
+void receive()
+{
   writeCharacteristic.readValue((byte *)&receiveWeightsBuffer, sizeof(receiveWeightsBuffer));
 
-  if (!biasFlag) {
+  if (!biasFlag)
+  {
     receiveWeightsBatch();
-  } else {
+  }
+  else
+  {
     receiveBiasBatch();
   }
 
@@ -304,23 +404,27 @@ void receive() {
   // ignore the stop flag received (causes a problem)
   // stopFlag = receiveWeightsBuffer.stopFlag;
 
-  if (!biasFlag) {
+  if (!biasFlag)
+  {
     colIndex += BLE_NUM_WEIGHTS;
 
-    if (colIndex >= inputLayersSizes[layerIndex - 1]) {
+    if (colIndex >= inputLayersSizes[layerIndex - 1])
+    {
       // move on to next neuron
       rowIndex += 1;
       colIndex = 0;
     }
 
-    if (rowIndex >= outputLayersSizes[layerIndex - 1]) {
+    if (rowIndex >= outputLayersSizes[layerIndex - 1])
+    {
       // move to next layer
       rowIndex = 0;
       colIndex = 0;
       layerIndex += 1;
 
       // switch to sending bias
-      if (layerIndex >= 5) {
+      if (layerIndex >= 5)
+      {
         layerIndex = 1;
         rowIndex = 0;
         colIndex = 0;
@@ -328,15 +432,19 @@ void receive() {
         biasFlag = true;
       }
     }
-  } else {
+  }
+  else
+  {
     colIndex += BLE_NUM_WEIGHTS;
-    if (colIndex >= outputLayersSizes[layerIndex - 1]) {
+    if (colIndex >= outputLayersSizes[layerIndex - 1])
+    {
       // next layer, start at colIndex = 0
       layerIndex += 1;
       colIndex = 0;
 
       // swtich back to sending weights
-      if (layerIndex >= 5) {
+      if (layerIndex >= 5)
+      {
         layerIndex = 1;
         rowIndex = 0;
         colIndex = 0;
@@ -349,23 +457,25 @@ void receive() {
   }
 }
 
-void sendWeightsBatch() {
+void sendWeightsBatch()
+{
   sendWeightsBuffer.syncFlag = false;
   sendWeightsBuffer.biasFlag = false;
 
-  switch (layerIndex) {
-    case 1:
-      lin1.copyWeightsToBuffer(rowIndex, colIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
-      break;
-    case 2:
-      lin2.copyWeightsToBuffer(rowIndex, colIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
-      break;
-    case 3:
-      lin3.copyWeightsToBuffer(rowIndex, colIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
-      break;
-    case 4:
-      lin4.copyWeightsToBuffer(rowIndex, colIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
-      break;
+  switch (layerIndex)
+  {
+  case 1:
+    lin1.copyWeightsToBuffer(rowIndex, colIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+    break;
+  case 2:
+    lin2.copyWeightsToBuffer(rowIndex, colIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+    break;
+  case 3:
+    lin3.copyWeightsToBuffer(rowIndex, colIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+    break;
+  case 4:
+    lin4.copyWeightsToBuffer(rowIndex, colIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+    break;
   }
 
   readCharacteristic.writeValue((byte *)&sendWeightsBuffer, sizeof(sendWeightsBuffer));
@@ -373,51 +483,55 @@ void sendWeightsBatch() {
   LOG_SHORT(LOG_INFO, "layer: %d | rowIndex: %d | colIndex: %d | biasFlag: %d | stopFlag: %d", layerIndex, rowIndex, colIndex, biasFlag, stopFlag);
 }
 
-void receiveWeightsBatch() {
-  if (receiveWeightsBuffer.biasFlag) return;
-
+void receiveWeightsBatch()
+{
+  if (receiveWeightsBuffer.biasFlag)
+    return;
 
   int layerIndex = receiveWeightsBuffer.layerIndex;
   int rowIndex = receiveWeightsBuffer.rowIndex;
   int colIndex = receiveWeightsBuffer.colIndex;
   bool biasFlag = receiveWeightsBuffer.biasFlag;
 
-  switch (layerIndex) {
-    case 1:
-      lin1.copyWeightsFromBuffer(rowIndex, colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
-      break;
-    case 2:
-      lin2.copyWeightsFromBuffer(rowIndex, colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
-      break;
-    case 3:
-      lin3.copyWeightsFromBuffer(rowIndex, colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
-      break;
-    case 4:
-      lin4.copyWeightsFromBuffer(rowIndex, colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
-      break;
+  switch (layerIndex)
+  {
+  case 1:
+    lin1.copyWeightsFromBuffer(rowIndex, colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+    break;
+  case 2:
+    lin2.copyWeightsFromBuffer(rowIndex, colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+    break;
+  case 3:
+    lin3.copyWeightsFromBuffer(rowIndex, colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+    break;
+  case 4:
+    lin4.copyWeightsFromBuffer(rowIndex, colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+    break;
   }
 
   LOG_SHORT(LOG_INFO, "BLE::received weights packet");
   LOG_SHORT(LOG_INFO, "layer: %d | rowIndex: %d | colIndex: %d | biasFlag: %d | stopFlag: %d", layerIndex, rowIndex, colIndex, biasFlag, stopFlag);
 }
 
-void sendBiasBatch() {
+void sendBiasBatch()
+{
   sendWeightsBuffer.syncFlag = false;
   sendWeightsBuffer.biasFlag = true;
 
-  switch (layerIndex) {
-    case 1:
-      lin1.copyBiasToBuffer(colIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
-      break;
-    case 2:
-      lin2.copyBiasToBuffer(colIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
-      break;
-    case 3:
-      lin3.copyBiasToBuffer(colIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
-      break;
-    case 4:
-      lin4.copyBiasToBuffer(colIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
-      break;
+  switch (layerIndex)
+  {
+  case 1:
+    lin1.copyBiasToBuffer(colIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+    break;
+  case 2:
+    lin2.copyBiasToBuffer(colIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+    break;
+  case 3:
+    lin3.copyBiasToBuffer(colIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+    break;
+  case 4:
+    lin4.copyBiasToBuffer(colIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+    break;
   }
 
   readCharacteristic.writeValue((byte *)&sendWeightsBuffer, sizeof(sendWeightsBuffer));
@@ -425,35 +539,38 @@ void sendBiasBatch() {
   LOG_SHORT(LOG_INFO, "layer: %d | rowIndex: %d | colIndex: %d | biasFlag: %d | stopFlag: %d", layerIndex, rowIndex, colIndex, biasFlag, stopFlag);
 }
 
-void receiveBiasBatch() {
-  if (!receiveWeightsBuffer.biasFlag) return;
+void receiveBiasBatch()
+{
+  if (!receiveWeightsBuffer.biasFlag)
+    return;
 
   int layerIndex = receiveWeightsBuffer.layerIndex;
   int rowIndex = receiveWeightsBuffer.rowIndex;
   int colIndex = receiveWeightsBuffer.colIndex;
   bool biasFlag = receiveWeightsBuffer.biasFlag;
 
-  switch (layerIndex) {
-    case 1:
-      lin1.copyBiasFromBuffer(colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
-      break;
-    case 2:
-      lin2.copyBiasFromBuffer(colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
-      break;
-    case 3:
-      lin3.copyBiasFromBuffer(colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
-      break;
-    case 4:
-      lin4.copyBiasFromBuffer(colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
-      break;
+  switch (layerIndex)
+  {
+  case 1:
+    lin1.copyBiasFromBuffer(colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+    break;
+  case 2:
+    lin2.copyBiasFromBuffer(colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+    break;
+  case 3:
+    lin3.copyBiasFromBuffer(colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+    break;
+  case 4:
+    lin4.copyBiasFromBuffer(colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+    break;
   }
 
   LOG_SHORT(LOG_INFO, "BLE::received bias packet");
   LOG_SHORT(LOG_INFO, "layer: %d | rowIndex: %d | colIndex: %d | biasFlag: %d | stopFlag: %d", layerIndex, rowIndex, colIndex, biasFlag, stopFlag);
 }
 
-
-void setup() {
+void setup()
+{
   // Setup the board's status indicators
   PINMODE(LEDR, OUTPUT);
   PINMODE(LEDG, OUTPUT);
@@ -484,7 +601,8 @@ void setup() {
 
   // BLE initialization
   // begin initialization
-  if (!BLE.begin()) {
+  if (!BLE.begin())
+  {
     LOG_SHORT(LOG_ERROR, "BLE::init failed");
 
     while (1)
@@ -517,14 +635,18 @@ void setup() {
   initialize();
 }
 
-void loop() {
-  if (!stopFlag) {
+void loop()
+{
+  if (!stopFlag)
+  {
     BLE.poll();
-    if (sendFlag) {
+    if (sendFlag)
+    {
       sendSyncFlag();
     }
 
-    if (writeCharacteristic.written()) {
+    if (writeCharacteristic.written())
+    {
       sendFlag = false;
 
       receive();
@@ -532,7 +654,9 @@ void loop() {
 
       delay(10);
     }
-  } else {
+  }
+  else
+  {
     train();
     stopFlag = false;
   }
