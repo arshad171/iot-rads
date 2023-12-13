@@ -28,10 +28,10 @@ void handleShutterButton() {
 
 
 // Utility functions
-void send_picture() {
+void send_picture(Cmd cmd) {
     LOG_SHORT(LOG_DEBUG,"Acquiring image...");
     RichImage *image = get_image();
-    pack((byte *) image,getRichImageSize(image),DType::IMG,Cmd::SET_FRAME,&SP);
+    pack((byte *) image,getRichImageSize(image),DType::IMG,cmd,&SP);
     free(image);
 }
 
@@ -101,8 +101,15 @@ void loop() {
         
         switch(incoming.header.command) {
             case Cmd::GET_FRAME:
-                send_picture();
+                send_picture(Cmd::SET_FRAME);
                 break;
+            
+            case Cmd::GET_BROLL: {
+                byte count = *((byte *) incoming.data);
+                for(int i=0;i<count;i++)
+                    send_picture(Cmd::SET_BROLL);
+                    break;
+            }
             
             case Cmd::SET_FEATURE_VECTOR: {
                 if(incoming.header.type != DType::MAT) {
@@ -110,15 +117,13 @@ void loop() {
                     break;
                 }
 
-
                 LOG_SHORT(LOG_DEBUG,"Received %dx%d feature vector",feature_vector->metadata.rows,feature_vector->metadata.cols);
-                if(feature_vector != nullptr && should_free) {
+                if(feature_vector != nullptr) {
                     free(feature_vector);
                     LOG_SHORT(LOG_DEBUG,"Old feature vector discarded");
                 }
 
                 feature_vector = (RichMatrix *) incoming.data;
-
                 const int size = feature_vector->metadata.rows * feature_vector->metadata.cols;
 
                 LOG_SHORT(LOG_INFO, "size: %d", size);
@@ -147,12 +152,11 @@ void loop() {
             LOG_SHORT(LOG_DEBUG,"Freeing incoming data");
             free(incoming.data);
         }
-
     }
 
     // Handle interrupts
     if(acquireImage) {
-        send_picture();        
+        send_picture(Cmd::SET_FRAME);        
 
         // Reset the handler
         acquireImage = false;

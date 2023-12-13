@@ -6,7 +6,8 @@ enum DType : byte { // Types of data that can be transmitted
     LOG,
     MAT,
     IMG,
-    CMD  // Empty packet - just command
+    CMD, // Empty packet - just command
+    DAT
 };
 
 enum Cmd : byte { // Commands that can be sent to or received from other devices
@@ -19,6 +20,8 @@ enum Cmd : byte { // Commands that can be sent to or received from other devices
     // Image manipulation
     GET_FRAME, // Request frame from camera device
     SET_FRAME, // Response to previous request
+    GET_BROLL,
+    SET_BROLL
 };
 
 // Protocol packet

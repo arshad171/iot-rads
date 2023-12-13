@@ -17,6 +17,7 @@ class DataType(Enum):
     MAT = (1, "Matrix")
     IMG = (2, "Image")
     CMD = (3, "Command") # Empty packet - just command
+    DAT = (4, "Binary data")
 
     def __init__(self, tid, label):
         self.id = tid
@@ -40,6 +41,8 @@ class Command(Enum):
     SET_FEATURE_VECTOR = (3, "Update feature vector")
     GET_FRAME = (4, "Store picture from camera")
     SET_FRAME = (5, "Request picture from camera")
+    GET_BROLL = (6, "Request a series of pictures from the camera")
+    SET_BROLL = (7, "Store a series of pictures from the camera")
 
     def __init__(self, cid, label):
         self.id = cid
