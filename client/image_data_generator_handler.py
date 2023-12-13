@@ -13,11 +13,9 @@ class ImageDataGeneratorHandler(ImageDataGenerator):
         mask_path=None,
         use_dynamic_mask=True,
         image_size=[224, 224],
-        downsample_factor=16,
+        downsample_factor=8,
     ) -> None:
         super().__init__(dataset_path, mask_path, use_dynamic_mask, image_size, downsample_factor)
-
-        # self.handler: Protocol = handler
 
     def get_next_sample(self, raw=False) -> Tuple[np.ndarray, np.ndarray] | bytearray:
         """
