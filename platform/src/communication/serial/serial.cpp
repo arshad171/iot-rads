@@ -37,6 +37,7 @@ Packet SerialPort::recv() {
     // Initialize empty packet structure
     Packet packet;
     size_t rec_sz;
+    byte attempts;
 
     size_t magic_length = sizeof(packet.header.magic);
 
@@ -69,7 +70,11 @@ Packet SerialPort::recv() {
     }
 
     // Valid magic has been received, read the rest
-    rec_sz = Serial.readBytes((byte *) &packet.header+magic_length,sizeof(PHeader)-magic_length);
+    rec_sz = 0; attempts = 10;
+    while(rec_sz < sizeof(PHeader)-magic_length && attempts > 0) {
+        rec_sz += Serial.readBytes(((byte *) &(packet.header))+magic_length+rec_sz,sizeof(PHeader)-magic_length-rec_sz);
+    }
+
     if(rec_sz != sizeof(PHeader)-magic_length) {
         LOG(LOG_ERROR,"Received malformed packet (incomplete header)");
         return packet;
@@ -80,7 +85,12 @@ Packet SerialPort::recv() {
         packet.data = (byte *) memalloc(packet.header.size);
 
         // Read the payload
-        rec_sz = Serial.readBytes(packet.data,packet.header.size);
+        rec_sz = 0; attempts = 10;
+        while(rec_sz < packet.header.size && attempts > 0) {
+            rec_sz += Serial.readBytes(packet.data+rec_sz,packet.header.size-rec_sz);
+            attempts--;
+        }
+
         if(rec_sz != packet.header.size) {
             LOG(LOG_ERROR,"Received malformed payload (expected %d bytes, received %d)",packet.header.size,rec_sz);
             free(packet.data);
