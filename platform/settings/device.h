@@ -6,6 +6,7 @@
 // Communication options
 #define BAUD_RATE 19200
 #define LOG_LEVEL LOG_DEBUG
+#define PATIENCE 5
 
 // Camera parameters
 #define CAMERA_MODE  QVGA

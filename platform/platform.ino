@@ -14,6 +14,7 @@
 // Runtime variables
 static RichMatrix *feature_vector = nullptr;
 static bool must_request_data = true;
+static int patience;
 
 
 
@@ -35,11 +36,11 @@ void send_picture(Cmd cmd) {
     free(image);
 }
 
-
 void request_feature_vector() {
   LOG_SHORT(LOG_DEBUG, "Requesting feature vector...");
   pack(nullptr, 0, DType::CMD, Cmd::GET_FEATURE_VECTOR, &SP);
 }
+
 
 
 void setup() {
@@ -80,11 +81,22 @@ void setup() {
 
 // Main loop of the program
 void loop() {
+    // Decrease patience at every iteration to avoid deadlocks
+    patience--;
+
+    if(must_request_data == false && patience < 1) {
+        // Patience ran out: request data again
+        must_request_data = true;
+    }
+
     // Request data if necessary
     if(must_request_data) {
         LOG_SHORT(LOG_INFO,"Requesting feature vector...");
         pack(nullptr,0,DType::CMD,Cmd::GET_FEATURE_VECTOR,&SP);
-        must_request_data = false; // We already requested the next batch of data
+
+        // Wait for response up to a given amount of attempts
+        must_request_data = false;
+        patience = PATIENCE;
     }
 
     // Read incoming commands
@@ -141,6 +153,12 @@ void loop() {
                 must_request_data = true; // We processed this batch; request the next
                 break;
             }
+
+            // We requested a feature vector but none was available _> reset patience
+            case Cmd::NO_FEATURE_VECTOR:
+                LOG_SHORT(LOG_WARNING,"No feature vector available, retrying later...");
+                patience = PATIENCE;
+                break;
 
             default:
                 LOG_SHORT(LOG_WARNING,"Received unknown command %d",incoming.header.command);
