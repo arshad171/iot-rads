@@ -69,7 +69,7 @@ class ImageDataGenerator:
         if raw:
             return bytearray(x)
         else:
-            return (np.expand_dims(x,axis=1), y)
+            return (x, y)
 
     def __len__(self):
         return self.length
