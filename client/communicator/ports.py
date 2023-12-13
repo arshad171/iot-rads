@@ -85,7 +85,8 @@ class SerialChannel(Backend):
 
     def send_packet(self, packet: Packet):
         try:
-            self.__port.write(packet.serialize())
+            l = self.__port.write(packet.serialize())
+            print(f"Sent {l} byte{'s' if l != 1 else ''}")
         except SerialException as e:
             raise SerialPortException("Unable to send data through the serial port") from e
 
