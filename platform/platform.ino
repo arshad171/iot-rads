@@ -9,6 +9,9 @@
 // Platform settings
 #include "settings/device.h"
 
+#include "src/dnn/distributed/central.h"
+#include "src/dnn/distributed/peripheral.h"
+
 
 
 // Runtime variables
@@ -39,6 +42,66 @@ void send_picture(Cmd cmd) {
 void request_feature_vector() {
   LOG_SHORT(LOG_DEBUG, "Requesting feature vector...");
   pack(nullptr, 0, DType::CMD, Cmd::GET_FEATURE_VECTOR, &SP);
+}
+
+bool receive_feature_vector(int batchIndex)
+{
+  bool success = false;
+  bool awaitResponse = true;
+
+  for (int maxIters = 10; (maxIters > 0) && (awaitResponse); maxIters--)
+  {
+    Packet incoming = SP.recv();
+    bool should_free = true;
+
+    // // Stop when we process all incoming packets
+    if (incoming.header.magic[0] == 0)
+    {
+      continue;
+    }
+
+    LOG_SHORT(LOG_DEBUG, "Received packet with %d byte payload", incoming.header.size);
+
+    switch (incoming.header.command)
+    {
+    case Cmd::SET_FEATURE_VECTOR:
+    {
+      if (incoming.header.type != DType::MAT)
+      {
+        LOG(LOG_ERROR, "Received feature vector of wrong type %d", incoming.header.type);
+        break;
+      }
+
+      LOG_SHORT(LOG_DEBUG, "Received %dx%d feature vector", feature_vector->metadata.rows, feature_vector->metadata.cols);
+      if (feature_vector != nullptr && should_free)
+      {
+        free(feature_vector);
+        LOG_SHORT(LOG_DEBUG, "Old feature vector discarded");
+      }
+
+      feature_vector = (RichMatrix *)incoming.data;
+
+      const int size = feature_vector->metadata.rows * feature_vector->metadata.cols;
+
+      LOG_SHORT(LOG_INFO, "size: %d", size);
+
+      float features[size] = {0.0};
+
+      memcpy(features, feature_vector->data, size * sizeof(float));
+
+      for (int r = 0; r < xBatch.Rows; r++)
+      {
+        xBatch(r, batchIndex) = features[r];
+      }
+
+      should_free = false; // DO NOT FREE! The training data stays until replaced
+      awaitResponse = false;
+      success = true;
+      break;
+    }
+    }
+  }
+  return success;
 }
 
 
@@ -76,11 +139,91 @@ void setup() {
     DWRITE(LED_PWR,1);
 
     // Do stuff
+    PERIPHERAL::setup_peripheral();
     initialize();
 }
 
+
+
 // Main loop of the program
+void central_loop()
+{
+  using namespace CENTRAL;
+
+  // check if a peripheral has been discovered
+  peripheral = BLE.available();
+  BLEserviceConnect();
+  readCharacteristic = peripheral.characteristic("2A36");
+  writeCharacteristic = peripheral.characteristic("2A37");
+
+  if (readCharacteristic.subscribe())
+  {
+    LOG_SHORT(LOG_INFO, "BLE::subscribed to read characteristics");
+  }
+
+  value = peripheral.connected();
+  while (value)
+  {
+    if (readCharacteristic.valueUpdated())
+    {
+      receive();
+      send();
+      delay(10);
+    }
+    if (stopFlag)
+    {
+
+      if (trainflag == 0)
+      {
+        train();
+        stopFlag = false;
+        receiveWeightsBuffer.stopFlag = false;
+      }
+      trainflag += 1;
+      if (trainflag > 1)
+      {
+        trainflag = 0;
+      }
+    }
+  }
+  delay(10);
+  BLE.scanForUuid("19b10011-e8f2-537e-4f6c-d104768a1214");
+  delay(10);
+}
+
+void peripheral_loop()
+{
+  using namespace PERIPHERAL;
+
+  if (!stopFlag)
+  {
+    BLE.poll();
+    if (sendFlag)
+    {
+      sendSyncFlag();
+    }
+
+    if (writeCharacteristic.written())
+    {
+      sendFlag = false;
+
+      receive();
+      send();
+
+      delay(10);
+    }
+  }
+  else
+  {
+    train();
+    stopFlag = false;
+  }
+}
+
 void loop() {
+    peripheral_loop();
+    return;
+
     // Decrease patience at every iteration to avoid deadlocks
     patience--;
 
@@ -110,19 +253,19 @@ void loop() {
         }
 
         LOG_SHORT(LOG_DEBUG,"Received packet with %d byte payload",incoming.header.size);
-        
+
         switch(incoming.header.command) {
             case Cmd::GET_FRAME:
                 send_picture(Cmd::SET_FRAME);
                 break;
-            
+
             case Cmd::GET_BROLL: {
                 byte count = *((byte *) incoming.data);
                 for(int i=0;i<count;i++)
                     send_picture(Cmd::SET_BROLL);
                     break;
             }
-            
+
             case Cmd::SET_FEATURE_VECTOR: {
                 if(incoming.header.type != DType::MAT) {
                     LOG(LOG_ERROR,"Received feature vector of wrong type %d",incoming.header.type);
@@ -174,7 +317,7 @@ void loop() {
 
     // Handle interrupts
     if(acquireImage) {
-        send_picture(Cmd::SET_FRAME);        
+        send_picture(Cmd::SET_FRAME);
 
         // Reset the handler
         acquireImage = false;
