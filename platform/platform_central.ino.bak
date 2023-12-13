@@ -52,9 +52,9 @@ BLECharacteristic readCharacteristic;
 const float momentum = MOMENTUM;
 const float learning_rate = LEARNING_RATE;
 const int batch_size = BATCH_SIZE;
-const int NUM_TRAINING_DATA = 100;
+const int num_training_data = NUM_TRAINING_DATA;
 const int NUM_EPOCHS = 1;
-const int NUM_ITERS = int(NUM_TRAINING_DATA / batch_size);
+const int NUM_ITERS = int(num_training_data / batch_size);
 
 // m, n, N
 const int in1 = FEATURE_DIM;
@@ -157,7 +157,7 @@ bool receive_feature_vector(int batchIndex)
 
       LOG_SHORT(LOG_INFO, "size: %d", size);
 
-      float features[size];
+      float features[size] = {0.0};
 
       memcpy(features, feature_vector->data, size * sizeof(float));
 
@@ -186,7 +186,7 @@ void updateXBatch(bool trainingData)
       request_feature_vector();
       success = receive_feature_vector(batchIndex);
     }
-    LOG_SHORT(LOG_DEBUG, "got batch");
+    LOG_SHORT(LOG_DEBUG, "got batch of size %d", BATCH_SIZE);
   }
 
   // work with synthetic data
