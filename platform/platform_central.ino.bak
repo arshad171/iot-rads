@@ -230,39 +230,26 @@ void train() {
       loss += iterate(xBatch);
     }
     loss /= NUM_ITERS;
-    Serial.print("epoch: ");
-    Serial.print(epoch);
-    Serial.print(" loss: ");
-    Serial.println(loss);
-    // LOG_SHORT(LOG_INFO, "epoch: %d | loss: %f", epoch, loss);
+    LOG_SHORT(LOG_INFO, "epoch: %d | loss: %f", epoch, loss);
   }
 
   // testing
   updateXBatch(true);
   loss = iterate(xBatch);
-  // LOG_SHORT(LOG_INFO, "train sample: %f", loss);
-  Serial.print("train sample: ");
-  Serial.println(loss);
+  LOG_SHORT(LOG_INFO, "train sample: %f", loss);
 
   updateXBatch(false);
   loss = iterate(xBatch);
 
-  // LOG_SHORT(LOG_INFO, "test sample: %f", loss);
-  Serial.print("test sample: ");
-  Serial.println(loss);
+  LOG_SHORT(LOG_INFO, "test sample: %f", loss);
 }
 
 void BLEserviceConnect() {
 
   if (peripheral) {
     // discovered a peripheral, print out address, local name, and advertised service
-    Serial.print("Found ");
-    Serial.print(peripheral.address());
-    Serial.print(" '");
-    Serial.print(peripheral.localName());
-    Serial.print("' ");
-    Serial.print(peripheral.advertisedServiceUuid());
-    Serial.println();
+    // LOG_SHORT(LOG_INFO, "BLE::found peripheral: %s %s", peripheral.address(), peripheral.localName());
+    LOG_SHORT(LOG_INFO, "BLE::found peripheral");
 
     if (peripheral.localName() != "sender") {
       return;
@@ -274,18 +261,18 @@ void BLEserviceConnect() {
     // controlLed(peripheral);
     //peripheral.connect();
     if (peripheral.connect()) {
-      Serial.println("Connected");
+      LOG_SHORT(LOG_INFO, "BLE::connected");
     } else {
-      Serial.println("Failed to connect!");
+      LOG_SHORT(LOG_ERROR, "BLE::disconnected");
       return;
     }
     //peripheral.discoverAttributes();
     // discover peripheral attributes
-    Serial.println("Discovering attributes ...");
+    LOG_SHORT(LOG_INFO, "BLE::discovering attributes");
     if (peripheral.discoverAttributes()) {
-      Serial.println("Attributes discovered");
+      LOG_SHORT(LOG_INFO, "BLE::attributes discovered");
     } else {
-      Serial.println("Attribute discovery failed!");
+      LOG_SHORT(LOG_ERROR, "BLE::attributes discovery");
       peripheral.disconnect();
       return;
     }
@@ -315,16 +302,9 @@ void sendBiasBatch() {
   }
 
   writeCharacteristic.writeValue((byte *)&sendWeightsBuffer, sizeof(sendWeightsBuffer));
-  Serial.println("sent (bias)");
-  Serial.print("layer: ");
-  Serial.println(layerIndex);
-  Serial.print("row: ");
-  Serial.println(rowIndex);
-  Serial.print("col: ");
-  Serial.println(colIndex);
-  Serial.print("flag: ");
-  Serial.println(sendWeightsBuffer.biasFlag);
-  Serial.println("-----");
+
+  LOG_SHORT(LOG_INFO, "BLE::sent bias packet");
+  LOG_SHORT(LOG_INFO, "layer: %d | rowIndex: %d | colIndex: %d | biasFlag: %d | stopFlag: %d", layerIndex, rowIndex, colIndex, biasFlag, stopFlag);
 }
 
 void receiveBiasBatch() {
@@ -345,16 +325,8 @@ void receiveBiasBatch() {
       break;
   }
 
-  Serial.println("received (bias)");
-  Serial.print("layer: ");
-  Serial.println(layerIndex);
-  Serial.print("row: ");
-  Serial.println(rowIndex);
-  Serial.print("col: ");
-  Serial.println(colIndex);
-  Serial.print("flag: ");
-  Serial.println(receiveWeightsBuffer.biasFlag);
-  Serial.println("-----");
+  LOG_SHORT(LOG_INFO, "BLE::received bias packet");
+  LOG_SHORT(LOG_INFO, "layer: %d | rowIndex: %d | colIndex: %d | biasFlag: %d | stopFlag: %d", layerIndex, rowIndex, colIndex, biasFlag, stopFlag);
 }
 
 void receiveBiasBatchAvg() {
@@ -394,16 +366,8 @@ void receiveBiasBatchAvg() {
       break;
   }
 
-  Serial.println("received (bias)");
-  Serial.print("layer: ");
-  Serial.println(layerIndex);
-  Serial.print("row: ");
-  Serial.println(rowIndex);
-  Serial.print("col: ");
-  Serial.println(colIndex);
-  Serial.print("flag: ");
-  Serial.println(receiveWeightsBuffer.biasFlag);
-  Serial.println("-----");
+  LOG_SHORT(LOG_INFO, "BLE::received bias packet");
+  LOG_SHORT(LOG_INFO, "layer: %d | rowIndex: %d | colIndex: %d | biasFlag: %d | stopFlag: %d", layerIndex, rowIndex, colIndex, biasFlag, stopFlag);
 }
 
 void sendWeightsBatch() {
@@ -421,34 +385,20 @@ void sendWeightsBatch() {
       lin4.copyWeightsToBuffer(rowIndex, colIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
       break;
   }
-  //lin1.copyWeightsToBuffer(rowIndex, colIndex, sendWeightsBuffer.weights, BLE_NUM_WEIGHTS);
+
   writeCharacteristic.writeValue((byte *)&sendWeightsBuffer, sizeof(sendWeightsBuffer));
-  Serial.println("sent");
-  Serial.print("layer: ");
-  Serial.println(layerIndex);
-  Serial.print("row: ");
-  Serial.println(rowIndex);
-  Serial.print("col: ");
-  Serial.println(colIndex);
-  Serial.print("bias flag: ");
-  Serial.println(biasFlag);
-  Serial.print("stop flag: ");
-  Serial.println(stopFlag);
-  Serial.println("-----");
+  LOG_SHORT(LOG_INFO, "BLE::sent weights packet");
+  LOG_SHORT(LOG_INFO, "layer: %d | rowIndex: %d | colIndex: %d | biasFlag: %d | stopFlag: %d", layerIndex, rowIndex, colIndex, biasFlag, stopFlag);
 }
 
 void receiveWeightsBatch() {
   if (receiveWeightsBuffer.biasFlag) return;
-  //readCharacteristic.readValue((byte *)&receiveWeightsBuffer, sizeof(receiveWeightsBuffer));
+
   if (receiveWeightsBuffer.syncFlag == true) {
-    Serial.println("Not synchronized");
+    LOG_SHORT(LOG_DEBUG, "BLE::not synchronized");
     return;
   }
-  // layerIndex = receiveWeightsBuffer.layerIndex;
-  // rowIndex = receiveWeightsBuffer.rowIndex;
-  // colIndex = receiveWeightsBuffer.colIndex;
 
-  Serial.println("synchronized");
   switch (layerIndex) {
     case 1:
       lin1.copyWeightsFromBuffer(rowIndex, colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
@@ -463,24 +413,20 @@ void receiveWeightsBatch() {
       lin4.copyWeightsFromBuffer(rowIndex, colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
       break;
   }
-  //lin1.copyWeightsFromBuffer(receiveWeightsBuffer.rowIndex, receiveWeightsBuffer.colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
-  Serial.println("received");
-  Serial.println(receiveWeightsBuffer.weights[0]);
-  Serial.println(receiveWeightsBuffer.weights[BLE_NUM_WEIGHTS - 1]);
-  Serial.println(receiveWeightsBuffer.rowIndex);
-  Serial.println(receiveWeightsBuffer.colIndex);
+
+  LOG_SHORT(LOG_INFO, "BLE::received weights packet");
+  LOG_SHORT(LOG_INFO, "layer: %d | rowIndex: %d | colIndex: %d | biasFlag: %d | stopFlag: %d", layerIndex, rowIndex, colIndex, biasFlag, stopFlag);
 }
 
 void receiveWeightsBatchAvg() {
-  //readCharacteristic.readValue((byte *)&receiveWeightsBuffer, sizeof(receiveWeightsBuffer));
   if (receiveWeightsBuffer.biasFlag) return;
 
   if (receiveWeightsBuffer.syncFlag == true) {
-    Serial.println("Not synchronized");
+    LOG_SHORT(LOG_DEBUG, "BLE::not synchronized");
     return;
   }
-  //lin1.copyWeightsFromBufferAvg(rowIndex, colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
-  Serial.println("synchronized");
+
+
   switch (layerIndex) {
     case 1:
       lin1.copyWeightsToBuffer(rowIndex, colIndex, avgWeightsBuffer, BLE_NUM_WEIGHTS);
@@ -495,12 +441,11 @@ void receiveWeightsBatchAvg() {
       lin4.copyWeightsToBuffer(rowIndex, colIndex, avgWeightsBuffer, BLE_NUM_WEIGHTS);
       break;
   }
-  //lin1.copyWeightsToBuffer(rowIndex, colIndex, avgWeightsBuffer, BLE_NUM_WEIGHTS);
+
   for (int i = 0; i < BLE_NUM_WEIGHTS; i++) {
     receiveWeightsBuffer.weights[i] = 0.5 * (receiveWeightsBuffer.weights[i] + avgWeightsBuffer[i]);
   }
 
-  //lin1.copyWeightsFromBuffer(rowIndex, colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
   switch (layerIndex) {
     case 1:
       lin1.copyWeightsFromBuffer(rowIndex, colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
@@ -515,18 +460,9 @@ void receiveWeightsBatchAvg() {
       lin4.copyWeightsFromBuffer(rowIndex, colIndex, receiveWeightsBuffer.weights, BLE_NUM_WEIGHTS);
       break;
   }
-  Serial.println("received");
-  Serial.print("layer: ");
-  Serial.println(layerIndex);
-  Serial.print("row: ");
-  Serial.println(rowIndex);
-  Serial.print("col: ");
-  Serial.println(colIndex);
-  Serial.print("bias flag: ");
-  Serial.println(biasFlag);
-  Serial.print("stop flag: ");
-  Serial.println(stopFlag);
-  Serial.println("-----");
+
+  LOG_SHORT(LOG_INFO, "BLE::received weights packet");
+  LOG_SHORT(LOG_INFO, "layer: %d | rowIndex: %d | colIndex: %d | biasFlag: %d | stopFlag: %d", layerIndex, rowIndex, colIndex, biasFlag, stopFlag);
 }
 
 void send() {
@@ -595,7 +531,8 @@ void setup() {
   // start scanning for peripherals
   BLE.scanForUuid("19b10011-e8f2-537e-4f6c-d104768a1214");
 
-  Serial.println("i am the receiver...");
+  LOG_SHORT(LOG_INFO, "BLE::central ready");
+
 }
 
 void loop() {
@@ -607,9 +544,8 @@ void loop() {
 
 
   if (readCharacteristic.subscribe()) {
-    Serial.println("Subscribed to read characteristic");
+      LOG_SHORT(LOG_INFO, "BLE::subscribed to read characteristics");
   }
-  Serial.println("I am alive");
 
   value = peripheral.connected();
   while (value) {
@@ -621,7 +557,6 @@ void loop() {
     if (stopFlag) {
 
       if (trainflag == 0) {
-        Serial.println("trainning!!!");
         train();
         stopFlag = false;
         receiveWeightsBuffer.stopFlag = false;
@@ -631,7 +566,6 @@ void loop() {
         trainflag = 0;
       }
     }
-    //Serial.println("Logging 3");
   }
   delay(10);
   BLE.scanForUuid("19b10011-e8f2-537e-4f6c-d104768a1214");

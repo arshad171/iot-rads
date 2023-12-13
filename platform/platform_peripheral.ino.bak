@@ -234,39 +234,29 @@ void train() {
       loss += iterate(xBatch);
     }
     loss /= NUM_ITERS;
-    Serial.print("epoch: ");
-    Serial.print(epoch);
-    Serial.print(" loss: ");
-    Serial.println(loss);
-    // LOG_SHORT(LOG_INFO, "epoch: %d | loss: %f", epoch, loss);
+    LOG_SHORT(LOG_INFO, "epoch: %d | loss: %f", epoch, loss);
   }
 
   // testing
   updateXBatch(true);
   loss = iterate(xBatch);
-  // LOG_SHORT(LOG_INFO, "train sample: %f", loss);
-  Serial.print("train sample: ");
-  Serial.println(loss);
+  LOG_SHORT(LOG_INFO, "train sample: %f", loss);
 
   updateXBatch(false);
   loss = iterate(xBatch);
 
-  // LOG_SHORT(LOG_INFO, "test sample: %f", loss);
-  Serial.print("test sample: ");
-  Serial.println(loss);
+  LOG_SHORT(LOG_INFO, "test sample: %f", loss);
 }
 
 void blePeripheralConnectHandler(BLEDevice central) {
   // central connected event handler
-  Serial.print("Connected event, central: ");
-  Serial.println(central.address());
+  LOG_SHORT(LOG_INFO, "BLE::connected event central: %s", central.address());
   BLE.advertise();
 }
 
 void blePeripheralDisconnectHandler(BLEDevice central) {
   // central disconnected event handler
-  Serial.print("Disconnected event, central: ");
-  Serial.println(central.address());
+  LOG_SHORT(LOG_INFO, "BLE::disconnected event central: %s", central.address());
   BLE.advertise();
   sendFlag = true;
 }
@@ -280,7 +270,7 @@ void sendSyncFlag() {
     sendWeightsBuffer.weights[i] = 0.0;
   }
   readCharacteristic.writeValue((byte *)&sendWeightsBuffer, sizeof(sendWeightsBuffer));
-  Serial.println("sent sync packet");
+  LOG_SHORT(LOG_DEBUG, "BLE::sending sync packet");
 }
 
 
@@ -379,18 +369,8 @@ void sendWeightsBatch() {
   }
 
   readCharacteristic.writeValue((byte *)&sendWeightsBuffer, sizeof(sendWeightsBuffer));
-  Serial.println("sent");
-  Serial.print("layer: ");
-  Serial.println(layerIndex);
-  Serial.print("row: ");
-  Serial.println(rowIndex);
-  Serial.print("col: ");
-  Serial.println(colIndex);
-  Serial.print("bias flag: ");
-  Serial.println(biasFlag);
-  Serial.print("stop flag: ");
-  Serial.println(stopFlag);
-  Serial.println("-----");
+  LOG_SHORT(LOG_INFO, "BLE::sent weights packet");
+  LOG_SHORT(LOG_INFO, "layer: %d | rowIndex: %d | colIndex: %d | biasFlag: %d | stopFlag: %d", layerIndex, rowIndex, colIndex, biasFlag, stopFlag);
 }
 
 void receiveWeightsBatch() {
@@ -417,18 +397,8 @@ void receiveWeightsBatch() {
       break;
   }
 
-  Serial.println("received");
-  Serial.print("layer: ");
-  Serial.println(layerIndex);
-  Serial.print("row: ");
-  Serial.println(rowIndex);
-  Serial.print("col: ");
-  Serial.println(colIndex);
-  Serial.print("bias flag: ");
-  Serial.println(biasFlag);
-  Serial.print("stop flag: ");
-  Serial.println(stopFlag);
-  Serial.println("-----");
+  LOG_SHORT(LOG_INFO, "BLE::received weights packet");
+  LOG_SHORT(LOG_INFO, "layer: %d | rowIndex: %d | colIndex: %d | biasFlag: %d | stopFlag: %d", layerIndex, rowIndex, colIndex, biasFlag, stopFlag);
 }
 
 void sendBiasBatch() {
@@ -451,18 +421,8 @@ void sendBiasBatch() {
   }
 
   readCharacteristic.writeValue((byte *)&sendWeightsBuffer, sizeof(sendWeightsBuffer));
-  Serial.println("sent (bias)");
-  Serial.print("layer: ");
-  Serial.println(layerIndex);
-  Serial.print("row: ");
-  Serial.println(rowIndex);
-  Serial.print("col: ");
-  Serial.println(colIndex);
-  Serial.print("bias flag: ");
-  Serial.println(biasFlag);
-  Serial.print("stop flag: ");
-  Serial.println(stopFlag);
-  Serial.println("-----");
+  LOG_SHORT(LOG_INFO, "BLE::sent bias packet");
+  LOG_SHORT(LOG_INFO, "layer: %d | rowIndex: %d | colIndex: %d | biasFlag: %d | stopFlag: %d", layerIndex, rowIndex, colIndex, biasFlag, stopFlag);
 }
 
 void receiveBiasBatch() {
@@ -488,18 +448,8 @@ void receiveBiasBatch() {
       break;
   }
 
-  Serial.println("received (bias)");
-  Serial.print("layer: ");
-  Serial.println(layerIndex);
-  Serial.print("row: ");
-  Serial.println(rowIndex);
-  Serial.print("col: ");
-  Serial.println(colIndex);
-  Serial.print("bias flag: ");
-  Serial.println(biasFlag);
-  Serial.print("stop flag: ");
-  Serial.println(stopFlag);
-  Serial.println("-----");
+  LOG_SHORT(LOG_INFO, "BLE::received bias packet");
+  LOG_SHORT(LOG_INFO, "layer: %d | rowIndex: %d | colIndex: %d | biasFlag: %d | stopFlag: %d", layerIndex, rowIndex, colIndex, biasFlag, stopFlag);
 }
 
 
@@ -535,7 +485,7 @@ void setup() {
   // BLE initialization
   // begin initialization
   if (!BLE.begin()) {
-    Serial.println("starting Bluetooth® Low Energy module failed!");
+    LOG_SHORT(LOG_ERROR, "BLE::init failed");
 
     while (1)
       ;
@@ -561,7 +511,7 @@ void setup() {
   // start advertising
   BLE.advertise();
 
-  Serial.println("i am the sender...");
+  LOG_SHORT(LOG_INFO, "BLE::peripheral ready");
 
   // Do stuff
   initialize();
@@ -572,7 +522,6 @@ void loop() {
     BLE.poll();
     if (sendFlag) {
       sendSyncFlag();
-      Serial.println("sending weights");
     }
 
     if (writeCharacteristic.written()) {
@@ -584,7 +533,6 @@ void loop() {
       delay(10);
     }
   } else {
-    Serial.println("training...");
     train();
     stopFlag = false;
   }
