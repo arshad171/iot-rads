@@ -29,6 +29,8 @@ void SerialPort::send(Packet packet) {
             LOG(LOG_ERROR,"Error sending header (sent %ld/%ld)",dat_sent_sz,packet.header.size);
         }
     }
+
+    Serial.flush();
 }
 
 // NOTE: User must free data when no longer necessary
