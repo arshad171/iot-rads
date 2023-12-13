@@ -169,14 +169,8 @@ class MainWindow(QMainWindow):
     def connection1(self):
         """Handles request to change the connection status of the first pane"""
         if not self.__handlers[0].has_backend():
-<<<<<<< HEAD
-            self.__handlers[0].set_backend(
-                SerialChannel(self.__ssel1.currentText(), 19200, self.__interval)
-            )
-=======
             self.__handlers[0].set_backend(SerialChannel(self.__ssel1.currentText(),19200,self.__interval))
             self.__log1_txt.clear()
->>>>>>> 2bf2a61 (Finish implementation of feature vector handling)
             self.__conn1_btn.setText("D")
         else:
             self.__handlers[0].stop()
@@ -186,14 +180,8 @@ class MainWindow(QMainWindow):
     def connection2(self):
         """Handles request to change the connection status of the second pane"""
         if not self.__handlers[1].has_backend():
-<<<<<<< HEAD
-            self.__handlers[1].set_backend(
-                SerialChannel(self.__ssel2.currentText(), 19200, self.__interval)
-            )
-=======
             self.__handlers[1].set_backend(SerialChannel(self.__ssel2.currentText(),19200,self.__interval))
             self.__log2_txt.clear()
->>>>>>> 2bf2a61 (Finish implementation of feature vector handling)
             self.__conn2_btn.setText("D")
         else:
             self.__handlers[1].stop()
@@ -294,13 +282,6 @@ class MainThread(QThread):
                 self.__handlers[self.__curr_handler].send(Packet(None,Command.NO_FEATURE_VECTOR,DataType.CMD))
         elif src == "Client":
             # We use the internal data generator
-<<<<<<< HEAD
-            sample = self.__generator.get_next_sample()
-            self.__handlers[self.__curr_handler].send(
-                Packet(sample, Command.SET_FEATURE_VECTOR, DataType.MAT)
-            )
-=======
             x = self.__generator.get_next_sample()
             GLOBAL_SIGNALS.status_signal.emit(f"Sending feature vector {str(x.shape).replace(' ','')}")
             self.__handlers[self.__curr_handler].send(Packet(x,Command.SET_FEATURE_VECTOR,DataType.MAT))
->>>>>>> 2bf2a61 (Finish implementation of feature vector handling)
