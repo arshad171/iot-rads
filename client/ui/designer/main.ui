@@ -21,6 +21,9 @@
        <layout class="QHBoxLayout" name="tools1_lyt">
         <item>
          <widget class="QComboBox" name="ssel1_cmb">
+          <property name="editable">
+           <bool>true</bool>
+          </property>
           <property name="placeholderText">
            <string>Select Serial Device</string>
           </property>
@@ -55,6 +58,9 @@
        <layout class="QHBoxLayout" name="tools2_lyt">
         <item>
          <widget class="QComboBox" name="ssel2_cmb">
+          <property name="editable">
+           <bool>true</bool>
+          </property>
           <property name="placeholderText">
            <string>Select Serial Device</string>
           </property>
@@ -103,6 +109,13 @@
            <string>Actions</string>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout">
+           <item>
+            <widget class="QPushButton" name="load_btn">
+             <property name="text">
+              <string>Load Picture...</string>
+             </property>
+            </widget>
+           </item>
            <item>
             <widget class="QPushButton" name="save_btn">
              <property name="enabled">
@@ -205,6 +218,37 @@
             </layout>
            </item>
            <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_2">
+             <item>
+              <widget class="QLabel" name="src_inf_lbl">
+               <property name="maximumSize">
+                <size>
+                 <width>80</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>Inference</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="comboBox">
+               <item>
+                <property name="text">
+                 <string>Arduino 1</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Arduino 2</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
             <layout class="QHBoxLayout" name="src_dat_lyt">
              <item>
               <widget class="QLabel" name="src_dat_lbl">
@@ -215,7 +259,7 @@
                 </size>
                </property>
                <property name="text">
-                <string>Descriptor</string>
+                <string>Features</string>
                </property>
               </widget>
              </item>
