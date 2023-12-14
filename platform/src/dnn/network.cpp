@@ -59,10 +59,10 @@ BLA::Matrix<out3, 1> dLdb3;
 BLA::Matrix<out4, 1> dLdb4;
 
 
-BLA::Matrix<FEATURE_DIM, BATCH_SIZE> predict() {
+BLA::Matrix<FEATURE_DIM, BATCH_SIZE> predict(BLA::Matrix<FEATURE_DIM, BATCH_SIZE> x) {
   float loss;
   // forward
-  h1 = network.lin1.forward(xBatch);
+  h1 = network.lin1.forward(x);
   h1 = network.rel1.forward(h1);
 
   h2 = network.lin2.forward(h1);
@@ -75,7 +75,7 @@ BLA::Matrix<FEATURE_DIM, BATCH_SIZE> predict() {
   h4 = network.rel4.forward(h4);
 
   // loss
-  loss = sq.forward(xBatch, h4);
+  loss = sq.forward(x, h4);
   // loss for one sample, assuming the batch size has the same rows
   loss *= BATCH_SIZE;
 
