@@ -3,7 +3,7 @@
 
 #define BLE_NUM_WEIGHTS 25
 
-namespace CENTRAL {
+namespace BLE_CENTRAL {
   typedef struct __attribute__((packed))
   {
     bool syncFlag = false;
@@ -27,4 +27,5 @@ namespace CENTRAL {
   void receive();
   void send();
   void central_setup();
+  bool contact();
 }

@@ -1,3 +1,4 @@
+#include "../../../settings/device.h"
 #include "../../utils/common.h"
 #include "serial.h"
 
@@ -72,7 +73,7 @@ Packet SerialPort::recv() {
     }
 
     // Valid magic has been received, read the rest
-    rec_sz = 0; attempts = 10;
+    rec_sz = 0; attempts = PATIENCE;
     while(rec_sz < sizeof(PHeader)-magic_length && attempts > 0) {
         rec_sz += Serial.readBytes(((byte *) &(packet.header))+magic_length+rec_sz,sizeof(PHeader)-magic_length-rec_sz);
     }
@@ -87,7 +88,7 @@ Packet SerialPort::recv() {
         packet.data = (byte *) memalloc(packet.header.size);
 
         // Read the payload
-        rec_sz = 0; attempts = 10;
+        rec_sz = 0; attempts = PATIENCE;
         while(rec_sz < packet.header.size && attempts > 0) {
             rec_sz += Serial.readBytes(packet.data+rec_sz,packet.header.size-rec_sz);
             attempts--;

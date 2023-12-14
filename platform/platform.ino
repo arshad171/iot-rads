@@ -9,17 +9,21 @@
 // Platform settings
 #include "settings/device.h"
 
-#include "src/dnn/distributed/central.h"
-#include "src/dnn/distributed/peripheral.h"
+#include "src/dnn/distributed/distributed.h"
 
+enum State {
+    SYNC_WEIGHTS,
+    DO_TRAINING,
+    TRAINING_COMPLETE,
+    AWAITING_TRAINING_VECTOR
+};
 
 
 // Runtime variables
 static RichMatrix *feature_vector = nullptr;
-static bool must_request_data = true;
+static BLERole role = BLERole::CENTRAL;
+static State state = State::SYNC_WEIGHTS;
 static int patience;
-
-
 
 // Interrupt signals
 volatile static bool acquireImage = false;
@@ -30,78 +34,12 @@ void handleShutterButton() {
 }
 
 
-
 // Utility functions
 void send_picture(Cmd cmd) {
     LOG_SHORT(LOG_DEBUG,"Acquiring image...");
     RichImage *image = get_image();
     pack((byte *) image,getRichImageSize(image),DType::IMG,cmd,&SP);
     free(image);
-}
-
-void request_feature_vector() {
-  LOG_SHORT(LOG_DEBUG, "Requesting feature vector...");
-  pack(nullptr, 0, DType::CMD, Cmd::GET_FEATURE_VECTOR, &SP);
-}
-
-bool receive_feature_vector(int batchIndex)
-{
-  bool success = false;
-  bool awaitResponse = true;
-
-  for (int maxIters = 10; (maxIters > 0) && (awaitResponse); maxIters--)
-  {
-    Packet incoming = SP.recv();
-    bool should_free = true;
-
-    // // Stop when we process all incoming packets
-    if (incoming.header.magic[0] == 0)
-    {
-      continue;
-    }
-
-    LOG_SHORT(LOG_DEBUG, "Received packet with %d byte payload", incoming.header.size);
-
-    switch (incoming.header.command)
-    {
-    case Cmd::SET_FEATURE_VECTOR:
-    {
-      if (incoming.header.type != DType::MAT)
-      {
-        LOG(LOG_ERROR, "Received feature vector of wrong type %d", incoming.header.type);
-        break;
-      }
-
-      LOG_SHORT(LOG_DEBUG, "Received %dx%d feature vector", feature_vector->metadata.rows, feature_vector->metadata.cols);
-      if (feature_vector != nullptr && should_free)
-      {
-        free(feature_vector);
-        LOG_SHORT(LOG_DEBUG, "Old feature vector discarded");
-      }
-
-      feature_vector = (RichMatrix *)incoming.data;
-
-      const int size = feature_vector->metadata.rows * feature_vector->metadata.cols;
-
-      LOG_SHORT(LOG_INFO, "size: %d", size);
-
-      float features[size] = {0.0};
-
-      memcpy(features, feature_vector->data, size * sizeof(float));
-
-      for (int r = 0; r < xBatch.Rows; r++)
-      {
-        xBatch(r, batchIndex) = features[r];
-      }
-
-      should_free = false; // DO NOT FREE! The training data stays until replaced
-      awaitResponse = false;
-      success = true;
-      break;
-    }
-    }
-  }
-  return success;
 }
 
 
@@ -138,108 +76,177 @@ void setup() {
     // Tell the user we completed setup
     DWRITE(LED_PWR,1);
 
-    // Do stuff
-    PERIPHERAL::setup_peripheral();
-    initialize();
-}
-
-
-
-// Main loop of the program
-void central_loop()
-{
-  using namespace CENTRAL;
-
-  // check if a peripheral has been discovered
-  peripheral = BLE.available();
-  BLEserviceConnect();
-  readCharacteristic = peripheral.characteristic("2A36");
-  writeCharacteristic = peripheral.characteristic("2A37");
-
-  if (readCharacteristic.subscribe())
-  {
-    LOG_SHORT(LOG_INFO, "BLE::subscribed to read characteristics");
-  }
-
-  value = peripheral.connected();
-  while (value)
-  {
-    if (readCharacteristic.valueUpdated())
-    {
-      receive();
-      send();
-      delay(10);
-    }
-    if (stopFlag)
-    {
-
-      if (trainflag == 0)
-      {
-        train();
-        stopFlag = false;
-        receiveWeightsBuffer.stopFlag = false;
-      }
-      trainflag += 1;
-      if (trainflag > 1)
-      {
-        trainflag = 0;
-      }
-    }
-  }
-  delay(10);
-  BLE.scanForUuid("19b10011-e8f2-537e-4f6c-d104768a1214");
-  delay(10);
-}
-
-void peripheral_loop()
-{
-  using namespace PERIPHERAL;
-
-  if (!stopFlag)
-  {
-    BLE.poll();
-    if (sendFlag)
-    {
-      sendSyncFlag();
+    // Initialize BLE stack
+    if(role == BLERole::CENTRAL) {
+        BLE_CENTRAL::central_setup();
+    } else if(role == BLERole::PERIPHERAL) {
+        BLE_PERIPHERAL::setup_peripheral();
     }
 
-    if (writeCharacteristic.written())
-    {
-      sendFlag = false;
-
-      receive();
-      send();
-
-      delay(10);
-    }
-  }
-  else
-  {
-    train();
-    stopFlag = false;
-  }
+    // Initialize autoencoder
+    initialize_network();
 }
 
 void loop() {
-    peripheral_loop();
-    return;
+    // If we are a BLE Central we check whether the peripheral wants to speak to us
+    if(role == BLERole::CENTRAL) {
+        //if(state == State::SYNC_WEIGHTS) {
+        //    LOG_SHORT(LOG_INFO,"Performing weight synchronization");
+        //    if(!initialized) {
+        //        LOG_SHORT(LOG_INFO,"Initializing BLE synchronization");
+        //        BLE_CENTRAL::peripheral = BLE.available();
+        //        BLE_CENTRAL::BLEserviceConnect();
+        //        BLE_CENTRAL::readCharacteristic = BLE_CENTRAL::peripheral.characteristic("2A36");
+        //        BLE_CENTRAL::writeCharacteristic = BLE_CENTRAL::peripheral.characteristic("2A37");
 
-    // Decrease patience at every iteration to avoid deadlocks
-    patience--;
+        //        if (BLE_CENTRAL::readCharacteristic.subscribe()) {
+        //            LOG_SHORT(LOG_INFO, "BLE::subscribed to read characteristics");
+        //        }
 
-    if(must_request_data == false && patience < 1) {
-        // Patience ran out: request data again
-        must_request_data = true;
+        //        initialized = BLE_CENTRAL::peripheral.connected();
+        //        if(initialized) {
+        //            LOG_SHORT(LOG_DEBUG,"BLE::connection established");
+        //        }
+        //    }
+
+        //    while(initialized) {
+        //        if(BLE_CENTRAL::readCharacteristic.valueUpdated()) {
+        //            LOG_SHORT(LOG_DEBUG,"BLE::received update event");
+        //            BLE_CENTRAL::receive();
+        //            BLE_CENTRAL::send();
+        //            delay(10);
+        //        }
+
+        //        if(BLE_CENTRAL::stopFlag) {
+        //            // We must now do training
+        //            LOG_SHORT(LOG_INFO,"Weight synchronization complete");
+        //            state = State::DO_TRAINING;
+
+        //            begin_training();
+        //            // BLE_CENTRAL::peripheral.disconnect();
+        //            break;
+        //        }
+        //    }
+
+        //    // Resume scanning for the peripheral
+        //    delay(10);
+        //    BLE.scanForUuid("19b10011-e8f2-537e-4f6c-d104768a1214");
+        //    delay(10);
+        //} else if(state == State::TRAINING_COMPLETE) {
+        //    LOG_SHORT(LOG_INFO,"Training complete (loss is %f)",get_training_loss());
+
+        //    // Reset stop flags
+        //    BLE_CENTRAL::stopFlag = false;
+        //    BLE_CENTRAL::receiveWeightsBuffer.stopFlag = false;
+        //    BLE_CENTRAL::peripheral.connect();
+
+        //    // Perform weight synchronization
+        //    state = State::SYNC_WEIGHTS;
+        //}
+        // check if a peripheral has been discovered
+        BLE_CENTRAL::peripheral = BLE.available();
+        BLE_CENTRAL::BLEserviceConnect();
+        BLE_CENTRAL::readCharacteristic = BLE_CENTRAL::peripheral.characteristic("2A36");
+        BLE_CENTRAL::writeCharacteristic = BLE_CENTRAL::peripheral.characteristic("2A37");
+
+        if (BLE_CENTRAL::readCharacteristic.subscribe()) {
+          LOG_SHORT(LOG_INFO, "BLE::subscribed to read characteristics");
+        }
+
+        BLE_CENTRAL::value = BLE_CENTRAL::peripheral.connected();
+        while (BLE_CENTRAL::value) {
+            if (BLE_CENTRAL::readCharacteristic.valueUpdated()) {
+                BLE_CENTRAL::receive();
+                BLE_CENTRAL::send();
+                delay(10);
+            }
+            if (BLE_CENTRAL::stopFlag) {
+                if (BLE_CENTRAL::trainflag == 0) {
+                    blocking_train();
+                    BLE_CENTRAL::stopFlag = false;
+                    BLE_CENTRAL::receiveWeightsBuffer.stopFlag = false;
+                }
+                BLE_CENTRAL::trainflag += 1;
+                if (BLE_CENTRAL::trainflag > 1) {
+                  BLE_CENTRAL::trainflag = 0;
+                }
+            }
+        }
+
+        delay(10);
+        BLE.scanForUuid("19b10011-e8f2-537e-4f6c-d104768a1214");
+        delay(10);
+    } else if(role == BLERole::PERIPHERAL) {
+        while(state == State::SYNC_WEIGHTS) {
+            if(!BLE_PERIPHERAL::stopFlag) {
+                LOG_SHORT(LOG_DEBUG,"Searching for paired devices (send=%d)",BLE_PERIPHERAL::sendFlag);
+                BLE.poll(10000);
+                delay(100);
+
+                if(BLE_PERIPHERAL::sendFlag) {
+                    // Attempt to send a sync request to a hypothetical central
+                    BLE_PERIPHERAL::sendSyncFlag();
+                    LOG_SHORT(LOG_DEBUG,"Exited sendSyncFlag");
+                }
+
+                // If the central has sent back weights we have a connection
+                if(BLE_PERIPHERAL::writeCharacteristic.written()) {
+                    LOG_SHORT(LOG_DEBUG,"Central has connected, initiating sync...");
+                    BLE_PERIPHERAL::sendFlag = false;
+                    BLE_PERIPHERAL::receive();
+                    BLE_PERIPHERAL::send();
+                    delay(10);
+                }
+            } else {
+                // We have received the stop flag: weight sync is complete, now train
+                LOG_SHORT(LOG_INFO,"Weight synchronization complete");
+                state = State::DO_TRAINING;
+
+                begin_training();
+            }
+        }
+        
+        if(state == State::TRAINING_COMPLETE) {
+            // We have completed training: reset the stop flag
+            LOG_SHORT(LOG_INFO,"Training complete (loss is %f)",get_training_loss());
+
+            BLE_PERIPHERAL::stopFlag = false;
+            state = State::SYNC_WEIGHTS;
+        }
     }
 
-    // Request data if necessary
-    if(must_request_data) {
-        LOG_SHORT(LOG_INFO,"Requesting feature vector...");
-        pack(nullptr,0,DType::CMD,Cmd::GET_FEATURE_VECTOR,&SP);
+    // Are we in a deadlock?
+    if(state == State::AWAITING_TRAINING_VECTOR && patience-- <= 0) {
+        state = State::DO_TRAINING;
+    }
 
-        // Wait for response up to a given amount of attempts
-        must_request_data = false;
-        patience = PATIENCE;
+    // Handle request of training data
+    if(state == State::DO_TRAINING) {
+        if(!DNN_DEBUG) {
+            LOG_SHORT(LOG_INFO,"Requesting feature vector...");
+            pack(nullptr,0,DType::CMD,Cmd::GET_FEATURE_VECTOR,&SP);
+            state = State::AWAITING_TRAINING_VECTOR;
+            patience = PATIENCE;
+        } else {
+            RichMatrix *fake_features = (RichMatrix *) memalloc(getRichMatrixSize(FEATURE_DIM,1,MatrixType::TYPE_FLOAT32));
+            fake_features->metadata.rows = FEATURE_DIM;
+            fake_features->metadata.cols = 1;
+            fake_features->metadata.type = MatrixType::TYPE_FLOAT32;
+
+            float *data_ptr = (float *) fake_features->data;
+            for(int i=0; i < FEATURE_DIM; i++) {
+                data_ptr[i] = float(random(-1000, 1000) / 1000.0);
+            }
+
+            LOG_SHORT(LOG_DEBUG,"Processing fake feature vector for S P E E D");
+            bool fake_train_complete = process_feature(fake_features);
+            free(fake_features);
+
+            if(fake_train_complete) {
+                LOG_SHORT(LOG_DEBUG,"Fake training complete!");
+                state = State::TRAINING_COMPLETE;
+            }
+        }
     }
 
     // Read incoming commands
@@ -272,32 +279,31 @@ void loop() {
                     break;
                 }
 
-                LOG_SHORT(LOG_DEBUG,"Received %dx%d feature vector",feature_vector->metadata.rows,feature_vector->metadata.cols);
+                if(state == State::AWAITING_TRAINING_VECTOR) {
+                    state == State::DO_TRAINING;
+                }
+
                 if(feature_vector != nullptr) {
                     free(feature_vector);
                     LOG_SHORT(LOG_DEBUG,"Old feature vector discarded");
                 }
 
                 feature_vector = (RichMatrix *) incoming.data;
-                const int size = feature_vector->metadata.rows * feature_vector->metadata.cols;
+                const uint16_t r = feature_vector->metadata.rows;
+                const uint16_t c = feature_vector->metadata.cols;
+                LOG_SHORT(LOG_DEBUG,"Received %dx%d feature vector (%d)",r,c,r*c);
 
-                LOG_SHORT(LOG_INFO, "size: %d", size);
-
-                float features[size];
-
-                memcpy(features, feature_vector->data, size * sizeof(float));
-
-                LOG_SHORT(LOG_INFO, "*features: %f %f", features[0], features[1]);
-
-                // Do the training
-                train();
+                // Pass the feature vector to training code
+                bool training_finished = process_feature(feature_vector);
+                if(training_finished) {
+                    state = State::TRAINING_COMPLETE;
+                }
 
                 should_free = false; // DO NOT FREE! The training data stays until replaced
-                must_request_data = true; // We processed this batch; request the next
                 break;
             }
 
-            // We requested a feature vector but none was available _> reset patience
+            // We requested a feature vector but none was available
             case Cmd::NO_FEATURE_VECTOR:
                 LOG_SHORT(LOG_WARNING,"No feature vector available, retrying later...");
                 patience = PATIENCE;

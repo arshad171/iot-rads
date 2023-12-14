@@ -5,3 +5,4 @@
 #define MOMENTUM 0.2
 #define LEARNING_RATE 0.0001
 #define BATCH_SIZE 2
+#define NUM_EPOCHS 1

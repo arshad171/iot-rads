@@ -124,29 +124,3 @@ void setup()
 
 
 
-void loop()
-{
-  if (!stopFlag)
-  {
-    BLE.poll();
-    if (sendFlag)
-    {
-      sendSyncFlag();
-    }
-
-    if (writeCharacteristic.written())
-    {
-      sendFlag = false;
-
-      receive();
-      send();
-
-      delay(10);
-    }
-  }
-  else
-  {
-    train();
-    stopFlag = false;
-  }
-}

@@ -15,3 +15,6 @@
 
 // BLE
 #define BLE_ROLE PERIPHERAL
+
+// Use random weights instead of acquired feature vectors
+#define DNN_DEBUG false

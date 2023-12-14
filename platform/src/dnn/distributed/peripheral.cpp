@@ -5,7 +5,7 @@
 // NN Layers
 #include "../network.h"
 
-namespace PERIPHERAL {
+namespace BLE_PERIPHERAL {
     const int BLE_NUM_WEIGHTS = 25;
 
     typedef struct __attribute__((packed))

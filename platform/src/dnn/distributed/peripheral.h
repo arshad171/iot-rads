@@ -1,7 +1,7 @@
 #pragma once
 #include <ArduinoBLE.h>
 
-namespace PERIPHERAL {
+namespace BLE_PERIPHERAL {
     extern bool sendFlag;
     extern bool stopFlag;
     extern BLECharacteristic writeCharacteristic;

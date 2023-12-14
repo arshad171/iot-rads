@@ -1,12 +1,13 @@
 #include "../../../settings/dnn.h"
 #include "../../utils/logging.h"
+#include "../../utils/common.h"
 
 // NN Layers
 #include "../network.h"
 
 #include "central.h"
 
-namespace CENTRAL {
+namespace BLE_CENTRAL {
     bool biasFlag = false;
     int layerIndex = 1;
     int rowIndex, colIndex = 0;
@@ -321,5 +322,40 @@ namespace CENTRAL {
       BLE.scanForUuid("19b10011-e8f2-537e-4f6c-d104768a1214");
 
       LOG_SHORT(LOG_INFO, "BLE::central ready");
+    }
+
+    bool contact() {
+        // Search for a peripheral
+        peripheral = BLE.available();
+        if(peripheral && peripheral.localName() == "sender") {
+            LOG_SHORT(LOG_DEBUG,"<BLE::CENTER> Found peripheral");
+        }
+
+        // Stop scanning as we have found the other device
+        LOG_SHORT(LOG_DEBUG,"<BLE::CENTER> Stopping peripheral scan...");
+        BLE.stopScan();
+
+        // Attempt connection
+        if(peripheral.connect()) {
+            LOG_SHORT(LOG_INFO,"<BLE::CENTER> Connected to peripheral");
+            // Discover BLE device attributes
+            if(!peripheral.discoverAttributes()) {
+                LOG_SHORT(LOG_ERROR,"<BLE::CENTER> Unable to discover peripheral attributes");
+                peripheral.disconnect();
+                return false;
+            }
+            LOG_SHORT(LOG_DEBUG,"<BLE::CENTER> Discovered BLE peripheral attributes");
+        } else {
+          LOG_SHORT(LOG_ERROR,"<BLE::CENTER> Unable to connect to peripheral");
+          return false;
+        }
+
+        if (readCharacteristic.subscribe()) {
+            LOG_SHORT(LOG_DEBUG, "<BLE::CENTER> Subscribed to read characteristics");
+        }
+
+        // Get the characteristics
+        readCharacteristic = peripheral.characteristic("2A36");
+        writeCharacteristic = peripheral.characteristic("2A37");
     }
 }
