@@ -22,4 +22,4 @@ def register_command_handlers(handler: Protocol):
     
     @handler.register_cmd(command=Command.REPORT_ANOMALY)
     def handle_report(data: float):
-        print(f">>>>>>>>>>>>>>>>>>>>>>>>>>>>> {data} <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
+        print(f">>> {data}")

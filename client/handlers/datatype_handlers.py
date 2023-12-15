@@ -15,10 +15,7 @@ def register_datatype_decoders(handler: Protocol):
     @handler.register_decoder(dtype=DataType.LOG)
     def decode_log(data: bytes):
         """Decode the bytes into a string"""
-        try:
-            return data.decode("ascii")
-        except Exception:
-            print(f"ERROR >>> {data}")
+        return data.decode("ascii")
 
     @handler.register_decoder(dtype=DataType.MAT)
     def decode_mat(data: bytes):
@@ -97,7 +94,7 @@ def register_datatype_decoders(handler: Protocol):
     @handler.register_decoder(dtype=DataType.FLT)
     def decode_float(data: bytes) -> float:
         value = struct.unpack("<f",data)
-        return value
+        return value[0]
 
 
 def register_datatype_encoders(handler: Protocol):
