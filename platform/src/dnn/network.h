@@ -29,7 +29,6 @@ extern NetworkShape network;
 void initialize_network();
 void begin_training();
 bool process_feature(RichMatrix *vector);
-float get_training_loss();
 void blocking_train();
 void send_layer_weights(uint16_t layerIndex);
 

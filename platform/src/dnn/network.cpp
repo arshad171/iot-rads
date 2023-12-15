@@ -229,10 +229,6 @@ bool process_feature(RichMatrix *vector) {
   return false;
 }
 
-float get_training_loss() {
-  return training_loss;
-}
-
 // Blocking training
 bool receive_feature_vector(int batchIndex) {
     bool success = false;
