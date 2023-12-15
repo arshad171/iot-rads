@@ -17,7 +17,7 @@
 #include "src/communication/protocol.h"
 
 // Model
-#include "model_int8.h"
+#include "working.h"
 
 // Convenience functions
 const char* TensorTypeName(TfLiteType type) {
@@ -53,10 +53,11 @@ namespace {
 
 void setup() {
     // Initialize serial communication
-    SP.initialize(9600,1000);
+    SP.initialize(19200,1000);
     set_log_lvl(LOG_DEBUG);
     toggle_logs(true);
 
+    SP.blocking_wait(0);
     LOG_SHORT(LOG_INFO,"Serial communication started.");
 
     // Load the model
