@@ -101,7 +101,7 @@ class MNISTDataGenerator(DataGenerator):
 
 class ImageDataGenerator:
     """ Implementation of the generator using our image data"""
-    def __init__(self,dataset_path,mask_path=None,use_dynamic_mask=True,image_size=[320, 240]) -> None:
+    def __init__(self,dataset_path,model_path,mask_path=None,use_dynamic_mask=True,image_size=[320, 240]) -> None:
         self.MIN = -0.3
         self.MAX = 0.7
         self.use_dynamic_mask = use_dynamic_mask
@@ -115,7 +115,7 @@ class ImageDataGenerator:
             self.mask = mask["mask"]
         self.use_mask = use_dynamic_mask or (self.mask is not None)
 
-        self.embedding_network = tf.keras.models.load_model("../image-embedder/working.h5")
+        self.embedding_network = tf.keras.models.load_model(model_path)
 
         images = os.listdir(self.path)
         self.images = list(filter(lambda filename: filename.endswith(".jpg"), images))
@@ -201,24 +201,33 @@ class ImageDataGenerator:
 
     def __getitem__(self, idx) -> Tuple[np.ndarray, np.ndarray]:
         image = self.read_image(os.path.join(self.path, self.images[idx]))
+        embedding = self.get_feature_vector(image,apply_mask=self.use_mask)
+        return embedding, embedding
+
+    def get_embedding_and_image(self, idx) -> Tuple[np.ndarray, np.ndarray]:
+        image = self.read_image(os.path.join(self.path, self.images[idx]))
         transformed_image = self.transform(image).numpy()[0]
         embedding = self.get_feature_vector(image,apply_mask=self.use_mask)
         return embedding, transformed_image
 
     # Data extraction and manipulation
-    def next(self, raw=False) -> Tuple[np.ndarray, np.ndarray] | bytearray:
+    def next(self, raw=False, with_image=False) -> Tuple[np.ndarray, np.ndarray] | bytearray:
         """
         call this method get the next sample (x, y) pair.
         raw: True would return the raw bytes for transmission
         """
-        embedder,image = self.__getitem__(self.read_counter)
+        if not with_image:
+            x,y = self.__getitem__(self.read_counter)
+        else:
+            x,y = self.get_embedding_and_image(self.read_counter)
 
         self.read_counter += 1
         if self.read_counter >= self.length:
             self.read_counter = 0
             random.shuffle(self.images)
             print("shuffling")
-        return bytearray(embedder) if raw else (embedder,image)
+        
+        return bytearray(x) if raw and not with_image else (x,y)
 
     def get_image(self, idx, apply_mask=True):
         """ Loads an indexed image from the dataset """
@@ -268,8 +277,8 @@ class ImageDataGenerator:
 
 
 class ImageDataGeneratorHandler(ImageDataGenerator):
-    def __init__(self,dataset_path,mask_path=None,use_dynamic_mask=True,image_size=[320, 240]) -> None:
-        super().__init__(dataset_path, mask_path, use_dynamic_mask, image_size)
+    def __init__(self,dataset_path,model_path,mask_path=None,use_dynamic_mask=True,image_size=[320, 240]) -> None:
+        super().__init__(dataset_path, model_path, mask_path, use_dynamic_mask, image_size)
 
     def next(self) -> Tuple[np.ndarray, np.ndarray] | bytearray:
         """ Get the next embedding vector and image """
