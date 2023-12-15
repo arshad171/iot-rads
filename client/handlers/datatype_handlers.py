@@ -1,6 +1,7 @@
 """ Command handlers for the RADS protocol """
 
 import struct
+from typing import Dict
 import numpy as np
 from PIL import Image
 
@@ -123,3 +124,22 @@ def register_datatype_encoders(handler: Protocol):
         s_type, type_code = matrix_data_types[str(data.dtype)]
         fstr = f"<HHH{data.size}{s_type}"
         return struct.pack(fstr, r, c, type_code, *data.flatten(order="c"))
+
+    @handler.register_encoder(dtype=DataType.WTS)
+    def encode_weights(data: Dict):
+        layer_index = data["layer_index"]
+        rows, cols = data["weights"].shape
+
+        print(layer_index, rows, cols)
+
+        meta_bytes = struct.pack("<HHH", rows, cols, layer_index)
+        weights_bytes = struct.pack(
+            f"<{rows * cols}f", *data["weights"].flatten(order="C")
+        )
+        bias_bytes = struct.pack(f"<{rows}f", *data["bias"].flatten(order="C"))
+
+        data_bytes = meta_bytes + weights_bytes + bias_bytes
+
+        print(len(meta_bytes), len(weights_bytes), len(bias_bytes), len(data_bytes))
+
+        return data_bytes

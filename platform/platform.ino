@@ -312,6 +312,16 @@ void loop() {
                 send_layer_weights(4);
                 break;
             }
+
+            case Cmd::SET_LOAD_WEIGHTS: {
+              LOG_SHORT(LOG_DEBUG,"serving LOAD_WEIGHTS request");
+              RichLayerWeights *layerWeights = (RichLayerWeights*) incoming.data;
+              load_layer_weights(layerWeights);
+
+              should_free = true;
+              break;
+            }
+
             // We're doing inference Waltuh
             case Cmd::SET_INFERENCE_VECTOR: {
                 if(incoming.header.type != DType::MAT) {

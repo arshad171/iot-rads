@@ -32,5 +32,6 @@ bool process_feature(RichMatrix *vector);
 float get_training_loss();
 void blocking_train();
 void send_layer_weights(uint16_t layerIndex);
+void load_layer_weights(RichLayerWeights *layerWeights);
 
 float predict(BLA::Matrix<FEATURE_DIM, BATCH_SIZE> x);
