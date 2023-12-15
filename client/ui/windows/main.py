@@ -238,6 +238,10 @@ class MainThread(QThread):
             handler.register_cmd_direct(
                 Command.SET_FEATURE_VECTOR, self.__receive_feature_vector
             )
+            # receive and save weights
+            handler.register_cmd_direct(
+                Command.SET_WEIGHTS, self.__save_weights
+            )
 
         # Prepare the data generator
         self.__generator = ImageDataGeneratorHandler(
@@ -285,3 +289,9 @@ class MainThread(QThread):
             x = self.__generator.get_next_sample()
             GLOBAL_SIGNALS.status_signal.emit(f"Sending feature vector {str(x.shape).replace(' ','')}")
             self.__handlers[self.__curr_handler].send(Packet(x,Command.SET_FEATURE_VECTOR,DataType.MAT))
+
+    def __save_weights(self, data):
+        layer_index, weights, bias = data
+
+        np.save(f"{layer_index}_weights.npy", weights)
+        np.save(f"{layer_index}_bias.npy", bias)

@@ -9,9 +9,9 @@ public:
   // m, n, N
   int inputSize, outputSize, batchSize;
 
-  BLA::Matrix<TinputSize, TbatchSize> lastX;
-  BLA::Matrix<ToutputSize, TinputSize> weights;
-  BLA::Matrix<ToutputSize, 1> bias;
+  BLA::Matrix<TinputSize, TbatchSize, float> lastX;
+  BLA::Matrix<ToutputSize, TinputSize, float> weights;
+  BLA::Matrix<ToutputSize, 1, float> bias;
 
   LinearLayer() {
     this->inputSize = TinputSize;
@@ -24,7 +24,7 @@ public:
     // unifrom initialzer
     for (int r = 0; r < ToutputSize; r++) {
       for (int c = 0; c < TinputSize; c++) {
-        this->weights(r, c) = float(random(-1000, 1000) / 1000.0);
+        this->weights(r, c) = float(random(-1000, 1000)) / 1000.0;
       }
     }
   }

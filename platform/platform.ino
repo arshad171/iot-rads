@@ -303,6 +303,14 @@ void loop() {
                 break;
             }
 
+            case Cmd::GET_WEIGHTS: {
+                LOG_SHORT(LOG_DEBUG,"serving GET_WEIGHTS request");
+                send_layer_weights(1);
+                send_layer_weights(2);
+                send_layer_weights(3);
+                send_layer_weights(4);
+            }
+
             // We requested a feature vector but none was available
             case Cmd::NO_FEATURE_VECTOR:
                 LOG_SHORT(LOG_WARNING,"No feature vector available, retrying later...");

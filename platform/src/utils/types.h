@@ -24,6 +24,21 @@ struct RichMatrix {
     byte data[];
 };
 
+// struct LayerWeightsMetadata {
+//     MatrixMetadata matrixMetadata;
+//     uint16_t layerIndex;
+// };
+
+struct RichLayerWeights {
+    // LayerWeightsMetadata *metadata;
+    uint16_t rows;
+    uint16_t cols;
+    uint16_t layerIndex;
+    // byte weights[];
+    // byte bias[];
+    byte layerWeights[];
+};
+
 struct ImageMetadata {
     uint16_t width;
     uint16_t height;
@@ -57,3 +72,5 @@ size_t getRichMatrixSize(uint16_t r, uint16_t c, MatrixType t);
 RichImage *initRichImage(uint16_t w, uint16_t h, byte f, size_t d);
 
 size_t getRichImageSize(RichImage *image);
+
+// RichLayerWeights *initRichLayerWeights(int layerIndex, int rows, int cols);

@@ -18,6 +18,7 @@ class DataType(Enum):
     IMG = (2, "Image")
     CMD = (3, "Command") # Empty packet - just command
     DAT = (4, "Binary data")
+    WTS = (5, "Layer weights")
 
     def __init__(self, tid, label):
         self.id = tid
@@ -44,6 +45,8 @@ class Command(Enum):
     SET_FRAME = (6, "Request picture from camera")
     GET_BROLL = (7, "Request a series of pictures from the camera")
     SET_BROLL = (8, "Store a series of pictures from the camera")
+    GET_WEIGHTS = (9, "request layer weights")
+    SET_WEIGHTS = (10, "set layer weights")
 
     def __init__(self, cid, label):
         self.id = cid
