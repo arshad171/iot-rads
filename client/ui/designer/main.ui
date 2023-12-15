@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1085</width>
-    <height>681</height>
+    <width>1248</width>
+    <height>790</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -323,6 +323,33 @@
                  <string extracomment="The data comes from the PC">Client</string>
                 </property>
                </item>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="training_grp">
+          <property name="title">
+           <string>Training</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_3">
+           <item>
+            <layout class="QHBoxLayout" name="weights_lyt">
+             <item>
+              <widget class="QPushButton" name="w_save_btn">
+               <property name="text">
+                <string>Save Weights</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="w_load_btn">
+               <property name="text">
+                <string>Load Weights</string>
+               </property>
               </widget>
              </item>
             </layout>
