@@ -209,16 +209,19 @@ bool process_feature(RichMatrix *vector) {
   if ((++batch_index) >= BATCH_SIZE) {
     batch_index = 0;
     training_loss += iterate(xBatch);
+    LOG_SHORT(LOG_DEBUG,"Iter index: %d|%d",iters_index,NUM_ITERS);
 
     if ((++iters_index) >= NUM_ITERS) {
       iters_index = 0;
       training_loss /= NUM_ITERS;
 
       LOG_SHORT(LOG_DEBUG, "<span style=\"color: #FFD700;\">EPOCH %d || Loss: %f</span>", epoch_index, training_loss);
+
+      epoch_index++;
       training_loss = 0;
     }
 
-    if ((++epoch_index) >= NUM_EPOCHS) {
+    if (epoch_index >= NUM_EPOCHS) {
       // Training is complete
       begun = false;
       return true;

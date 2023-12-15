@@ -155,7 +155,7 @@ void loop() {
         
         if(state == State::TRAINING_COMPLETE) {
             // We have completed training: reset the stop flag
-            LOG_SHORT(LOG_INFO,"Training complete (loss is %f)",get_training_loss());
+            LOG_SHORT(LOG_INFO,"Training complete");
 
             BLE_PERIPHERAL::stopFlag = false;
             state = State::SYNC_WEIGHTS;
@@ -170,7 +170,7 @@ void loop() {
     // Handle request of training data
     if(state == State::DO_TRAINING) {
         if(!DNN_DEBUG) {
-            LOG_SHORT(LOG_INFO,"Requesting feature vector...");
+            LOG_SHORT(LOG_INFO,"Requesting (%dx1) feature vector...",FEATURE_DIM);
             pack(nullptr,0,DType::CMD,Cmd::GET_FEATURE_VECTOR,&SP);
             state = State::AWAITING_TRAINING_VECTOR;
             patience = PATIENCE;
