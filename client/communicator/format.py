@@ -19,6 +19,7 @@ class DataType(Enum):
     CMD = (3, "Command") # Empty packet - just command
     DAT = (4, "Binary data")
     WTS = (5, "Layer weights")
+    FLT = (6, "Float 32")
 
     def __init__(self, tid, label):
         self.id = tid

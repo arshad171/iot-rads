@@ -209,12 +209,15 @@ bool process_feature(RichMatrix *vector) {
   if ((++batch_index) >= BATCH_SIZE) {
     batch_index = 0;
     training_loss += iterate(xBatch);
+    LOG_SHORT(LOG_DEBUG,"Iter index: %d|%d",iters_index,NUM_ITERS);
 
     if ((++iters_index) >= NUM_ITERS) {
       iters_index = 0;
       training_loss /= NUM_ITERS;
 
-      LOG_SHORT(LOG_DEBUG, "EPOCH %d || Loss: %f", ++epoch_index, training_loss);
+      LOG_SHORT(LOG_DEBUG, "<span style=\"color: #FFD700;\">EPOCH %d || Loss: %f</span>", epoch_index, training_loss);
+
+      epoch_index++;
       training_loss = 0;
     }
 
@@ -227,10 +230,6 @@ bool process_feature(RichMatrix *vector) {
 
   // Training is not yet complete
   return false;
-}
-
-float get_training_loss() {
-  return training_loss;
 }
 
 // Blocking training
@@ -295,18 +294,8 @@ void blocking_train() {
       loss += iterate(xBatch);
     }
     loss /= NUM_ITERS;
-    LOG_SHORT(LOG_INFO, "epoch: %d | loss: %f", epoch, loss);
+    LOG_SHORT(LOG_INFO, "<span style=\"color: #FFD700;\">EPOCH %d || Loss: %f</span>", epoch, loss);
   }
-
-  // testing
-  updateXBatch(true);
-  loss = iterate(xBatch);
-  LOG_SHORT(LOG_INFO, "train sample: %f", loss);
-
-  updateXBatch(false);
-  loss = iterate(xBatch);
-
-  LOG_SHORT(LOG_INFO, "test sample: %f", loss);
 }
 
 void send_layer_weights(uint16_t layerIndex) {

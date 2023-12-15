@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1248</width>
-    <height>790</height>
+    <width>1453</width>
+    <height>794</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -48,7 +48,17 @@
        </layout>
       </item>
       <item>
-       <widget class="QPlainTextEdit" name="log1_txt"/>
+       <widget class="QPlainTextEdit" name="log1_txt">
+        <property name="acceptDrops">
+         <bool>false</bool>
+        </property>
+        <property name="undoRedoEnabled">
+         <bool>false</bool>
+        </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+       </widget>
       </item>
      </layout>
     </item>
@@ -82,7 +92,17 @@
        </layout>
       </item>
       <item>
-       <widget class="QPlainTextEdit" name="log2_txt"/>
+       <widget class="QPlainTextEdit" name="log2_txt">
+        <property name="acceptDrops">
+         <bool>false</bool>
+        </property>
+        <property name="undoRedoEnabled">
+         <bool>false</bool>
+        </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+       </widget>
       </item>
      </layout>
     </item>
@@ -94,6 +114,9 @@
          <widget class="QComboBox" name="ssel3_cmb">
           <property name="editable">
            <bool>true</bool>
+          </property>
+          <property name="placeholderText">
+           <string>Select Serial Device</string>
           </property>
          </widget>
         </item>
@@ -113,7 +136,17 @@
        </layout>
       </item>
       <item>
-       <widget class="QPlainTextEdit" name="log3_txt"/>
+       <widget class="QPlainTextEdit" name="log3_txt">
+        <property name="acceptDrops">
+         <bool>false</bool>
+        </property>
+        <property name="undoRedoEnabled">
+         <bool>false</bool>
+        </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+       </widget>
       </item>
      </layout>
     </item>
@@ -205,13 +238,6 @@
              </property>
             </widget>
            </item>
-           <item>
-            <widget class="QPushButton" name="infer_btn">
-             <property name="text">
-              <string>Infer</string>
-             </property>
-            </widget>
-           </item>
           </layout>
          </widget>
         </item>
@@ -261,7 +287,7 @@
             </layout>
            </item>
            <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_2">
+            <layout class="QHBoxLayout" name="src_inf_lyt">
              <item>
               <widget class="QLabel" name="src_inf_lbl">
                <property name="maximumSize">
@@ -276,7 +302,43 @@
               </widget>
              </item>
              <item>
-              <widget class="QComboBox" name="comboBox">
+              <widget class="QComboBox" name="src_inf_cmb">
+               <item>
+                <property name="text">
+                 <string>Arduino 1</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Arduino 2</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Arduino 3</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="src_w_lyt">
+             <item>
+              <widget class="QLabel" name="src_w_lbl">
+               <property name="maximumSize">
+                <size>
+                 <width>80</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>Weights</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="src_w_cmb">
                <item>
                 <property name="text">
                  <string>Arduino 1</string>
@@ -333,9 +395,16 @@
         <item>
          <widget class="QGroupBox" name="training_grp">
           <property name="title">
-           <string>Training</string>
+           <string>Training and Inference</string>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_3">
+           <item>
+            <widget class="QPushButton" name="infer_btn">
+             <property name="text">
+              <string>Infer</string>
+             </property>
+            </widget>
+           </item>
            <item>
             <layout class="QHBoxLayout" name="weights_lyt">
              <item>

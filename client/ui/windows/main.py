@@ -7,7 +7,7 @@ from threading import Event
 import serial.tools.list_ports as lports
 
 import numpy as np
-from PIL import Image as PILImage
+from PIL import Image as PILImage, ImageShow
 from PIL.Image import Image
 
 from PyQt6 import QtGui, uic
@@ -22,7 +22,7 @@ from PyQt6.QtWidgets import (
     QSpinBox
 )
 from PyQt6.QtCore import QThread, pyqtSignal, pyqtSlot
-from image_data_generator_handler import ImageDataGeneratorHandler
+from generator import ImageDataGeneratorHandler
 
 from ui.glob import GLOBAL_SIGNALS
 
@@ -72,12 +72,15 @@ class MainWindow(QMainWindow):
         self.__inference_src_cmb = self.findChild(QComboBox,"src_inf_cmb")
         self.__broll_shutter = self.findChild(QPushButton,"broll_btn")
         self.__broll_count = self.findChild(QSpinBox,"broll_sbox")
+        self.__weight_src_cmb = self.findChild(QComboBox,"src_w_cmb")
+        self.__weight_save_btn = self.findChild(QPushButton,"w_save_btn")
+        self.__weight_load_btn = self.findChild(QPushButton,"w_load_btn")
 
         # List of attached arduino devices
         self.__devices = []
 
         # Pictures received from Arduino
-        self.__picture = None
+        self.picture = None
 
         # Inference flag
         self.inference_requested = False
@@ -110,6 +113,8 @@ class MainWindow(QMainWindow):
         self.__conn3_btn.clicked.connect(self.connection3)
         self.__broll_shutter.clicked.connect(self.begin_broll)
         self.__infer_btn.clicked.connect(self.infer)
+        self.__weight_save_btn.clicked.connect(self.weight_save)
+        self.__weight_load_btn.clicked.connect(self.weight_load)
 
         # Hook up signal handlers to the protocol
         self.__handlers[0].hook_cmd(Command.WRITE_LOG, self.__signal_append_log1)
@@ -136,17 +141,17 @@ class MainWindow(QMainWindow):
     @pyqtSlot(str)
     def append_log1(self, log: str):
         """Append log lines in the log pane"""
-        self.__log1_txt.appendPlainText(log)
+        self.__log1_txt.appendHtml(log)
 
     @pyqtSlot(str)
     def append_log2(self, log: str):
         """Append log lines in the log pane"""
-        self.__log2_txt.appendPlainText(log)
+        self.__log2_txt.appendHtml(log)
 
     @pyqtSlot(str)
     def append_log3(self, log: str):
         """Append log lines in the log pane"""
-        self.__log3_txt.appendPlainText(log)
+        self.__log3_txt.appendHtml(log)
 
     @pyqtSlot(str)
     def update_statusbar(self, status: str):
@@ -157,25 +162,25 @@ class MainWindow(QMainWindow):
     @pyqtSlot(Image)
     def picture_set(self, image: Image):
         """Sets the content of the image frame"""
-        self.__picture = image
+        self.picture = image
         self.__frame.clear()
-        self.__frame.setPixmap(self.__picture.toqpixmap())
+        self.__frame.setPixmap(self.picture.toqpixmap())
         self.__save_btn.setDisabled(False)
 
     @pyqtSlot()
     def save_picture(self):
         """Saves picture to the device in PNG format"""
-        if self.__picture is None:
+        if self.picture is None:
             return
 
         fname,_ = QFileDialog.getSaveFileName(self, "Save picture as...", "", "PNG Images (*.png)")
         if fname:
-            self.__picture.save(fname, "PNG")
+            self.picture.save(fname, "PNG")
 
     @pyqtSlot()
     def load_picture(self):
         """ Load picture from disk """
-        fname,_ = QFileDialog.getOpenFileName(self,"Load picture...","","PNG Images (*.png)")
+        fname,_ = QFileDialog.getOpenFileName(self,"Load picture...","","PNG Images (*.png);;JPEG Images (*.jpg)")
         if fname:
             self.picture_set(PILImage.open(fname))
 
@@ -250,13 +255,22 @@ class MainWindow(QMainWindow):
     def handle_broll(self,image: Image):
         """ Handles receiving B-Roll footage """
         self.picture_set(image)
-        self.__picture.save(os.path.join(self.__broll_path,f"{str(self.__broll_idx)}.png"), "PNG")
+        self.picture.save(os.path.join(self.__broll_path,f"{str(self.__broll_idx)}.png"), "PNG")
         self.__broll_idx += 1
 
     @pyqtSlot()
     def infer(self):
         """ Request inference """
         self.inference_requested = True
+
+    @pyqtSlot()
+    def weight_save(self):
+        """ Request weights from device """
+        self.__handlers[self.__weight_src_cmb.currentIndex()].send(Packet(None,Command.GET_WEIGHTS,DataType.CMD))
+    
+    @pyqtSlot()
+    def weight_load(self):
+        pass
 
 
 class MainThread(QThread):
@@ -298,7 +312,7 @@ class MainThread(QThread):
 
         # Prepare the data generator
         self.__generator = ImageDataGeneratorHandler(
-            "../images-data1/", use_dynamic_mask=True
+            "../images-data1/","../image-embedder/working.h5", use_dynamic_mask=True
         )
 
         # This will store the feature vector received by the embedder
@@ -329,25 +343,31 @@ class MainThread(QThread):
         self.__feature_vector = data.astype(np.float32)
 
     def __provide_feature_vector(self, data: None):
-        src = self.__window.get_active_data_source()
-        if self.__window.inference_requested and self.__curr_handler == self.__window.get_active_inference_source():
-            cmd = Command.SET_INFERENCE_VECTOR
-        else:
-            cmd = Command.SET_TRAINING_VECTOR
-        self.__window.inference_requested = False
+        data_src = self.__window.get_active_data_source()
+        inference_src = self.__window.get_active_inference_source()
+        if self.__window.inference_requested and self.__curr_handler == inference_src:
+            ImageShow.show(self.__window.picture)
+            features = self.__generator.get_feature_vector(self.__window.picture.convert("L"))
+            print("THE FLIPPING FEATURES:")
+            print(features)
 
-        if src == "Arduino":
-            # We get the feature vector from arduino
-            if self.__feature_vector is not None:
-                GLOBAL_SIGNALS.status_signal.emit(f"Sending feature vector {str(self.__feature_vector.shape).replace(' ','')}")
-                self.__handlers[self.__curr_handler].send(Packet(self.__feature_vector,cmd,DataType.MAT))
-            else:
-                self.__handlers[self.__curr_handler].send(Packet(None,Command.NO_FEATURE_VECTOR,DataType.CMD))
-        elif src == "Client":
-            # We use the internal data generator
-            x = self.__generator.get_next_sample()
-            GLOBAL_SIGNALS.status_signal.emit(f"Sending feature vector {str(x.shape).replace(' ','')}")
-            self.__handlers[self.__curr_handler].send(Packet(x,cmd,DataType.MAT))
+            GLOBAL_SIGNALS.status_signal.emit(f"Sending inference vector {str(features.shape).replace(' ','')}")
+            self.__handlers[self.__curr_handler].send(Packet(features,Command.SET_INFERENCE_VECTOR,DataType.MAT))
+
+            self.__window.inference_requested = False
+        else:
+            if data_src == "Arduino":
+                # We get the feature vector from arduino
+                if self.__feature_vector is not None:
+                    GLOBAL_SIGNALS.status_signal.emit(f"Sending feature vector {str(self.__feature_vector.shape).replace(' ','')}")
+                    self.__handlers[self.__curr_handler].send(Packet(self.__feature_vector,Command.SET_TRAINING_VECTOR,DataType.MAT))
+                else:
+                    self.__handlers[self.__curr_handler].send(Packet(None,Command.NO_FEATURE_VECTOR,DataType.CMD))
+            elif data_src == "Client":
+                # We use the internal data generator
+                features,_ = self.__generator.next()
+                GLOBAL_SIGNALS.status_signal.emit(f"Sending feature vector {str(features.shape).replace(' ','')}")
+                self.__handlers[self.__curr_handler].send(Packet(features,Command.SET_TRAINING_VECTOR,DataType.MAT))
 
     def __save_weights(self, data):
         layer_index, weights, bias = data

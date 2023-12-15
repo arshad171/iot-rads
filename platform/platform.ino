@@ -90,59 +90,6 @@ void setup() {
 void loop() {
     // If we are a BLE Central we check whether the peripheral wants to speak to us
     if(role == BLERole::CENTRAL) {
-        //if(state == State::SYNC_WEIGHTS) {
-        //    LOG_SHORT(LOG_INFO,"Performing weight synchronization");
-        //    if(!initialized) {
-        //        LOG_SHORT(LOG_INFO,"Initializing BLE synchronization");
-        //        BLE_CENTRAL::peripheral = BLE.available();
-        //        BLE_CENTRAL::BLEserviceConnect();
-        //        BLE_CENTRAL::readCharacteristic = BLE_CENTRAL::peripheral.characteristic("2A36");
-        //        BLE_CENTRAL::writeCharacteristic = BLE_CENTRAL::peripheral.characteristic("2A37");
-
-        //        if (BLE_CENTRAL::readCharacteristic.subscribe()) {
-        //            LOG_SHORT(LOG_INFO, "BLE::subscribed to read characteristics");
-        //        }
-
-        //        initialized = BLE_CENTRAL::peripheral.connected();
-        //        if(initialized) {
-        //            LOG_SHORT(LOG_DEBUG,"BLE::connection established");
-        //        }
-        //    }
-
-        //    while(initialized) {
-        //        if(BLE_CENTRAL::readCharacteristic.valueUpdated()) {
-        //            LOG_SHORT(LOG_DEBUG,"BLE::received update event");
-        //            BLE_CENTRAL::receive();
-        //            BLE_CENTRAL::send();
-        //            delay(10);
-        //        }
-
-        //        if(BLE_CENTRAL::stopFlag) {
-        //            // We must now do training
-        //            LOG_SHORT(LOG_INFO,"Weight synchronization complete");
-        //            state = State::DO_TRAINING;
-
-        //            begin_training();
-        //            // BLE_CENTRAL::peripheral.disconnect();
-        //            break;
-        //        }
-        //    }
-
-        //    // Resume scanning for the peripheral
-        //    delay(10);
-        //    BLE.scanForUuid("19b10011-e8f2-537e-4f6c-d104768a1214");
-        //    delay(10);
-        //} else if(state == State::TRAINING_COMPLETE) {
-        //    LOG_SHORT(LOG_INFO,"Training complete (loss is %f)",get_training_loss());
-
-        //    // Reset stop flags
-        //    BLE_CENTRAL::stopFlag = false;
-        //    BLE_CENTRAL::receiveWeightsBuffer.stopFlag = false;
-        //    BLE_CENTRAL::peripheral.connect();
-
-        //    // Perform weight synchronization
-        //    state = State::SYNC_WEIGHTS;
-        //}
         // check if a peripheral has been discovered
         BLE_CENTRAL::peripheral = BLE.available();
         BLE_CENTRAL::BLEserviceConnect();
@@ -208,7 +155,7 @@ void loop() {
         
         if(state == State::TRAINING_COMPLETE) {
             // We have completed training: reset the stop flag
-            LOG_SHORT(LOG_INFO,"Training complete (loss is %f)",get_training_loss());
+            LOG_SHORT(LOG_INFO,"Training complete");
 
             BLE_PERIPHERAL::stopFlag = false;
             state = State::SYNC_WEIGHTS;
@@ -223,7 +170,7 @@ void loop() {
     // Handle request of training data
     if(state == State::DO_TRAINING) {
         if(!DNN_DEBUG) {
-            LOG_SHORT(LOG_INFO,"Requesting feature vector...");
+            LOG_SHORT(LOG_INFO,"Requesting (%dx1) feature vector...",FEATURE_DIM);
             pack(nullptr,0,DType::CMD,Cmd::GET_FEATURE_VECTOR,&SP);
             state = State::AWAITING_TRAINING_VECTOR;
             patience = PATIENCE;
@@ -349,7 +296,8 @@ void loop() {
 
                 // Pass the feature vector to training code
                 float loss = predict(prediction_vector);
-                LOG_SHORT(LOG_INFO,"Prediction loss: %f", loss);
+                pack((byte *) &loss,sizeof(loss),DType::FLT,Cmd::REPORT_ANOMALY,&SP);
+                LOG_SHORT(LOG_INFO,"<span style=\"color: #FFD700;\">Prediction loss: %.15f</span>", loss);
                 break;
             }
 

@@ -17,7 +17,7 @@
 #include "src/communication/protocol.h"
 
 // Model
-#include "model_int8.h"
+#include "working.h"
 
 // Convenience functions
 const char* TensorTypeName(TfLiteType type) {
@@ -47,16 +47,17 @@ namespace {
     TfLiteTensor* output = nullptr;
 
     // Tensor arena (memory region allocated to Tensorflow)
-    constexpr int tensor_arena_size = 100 * 1024;
+    constexpr int tensor_arena_size = 195 * 1024;
     alignas(16) uint8_t tensor_arena[tensor_arena_size];
 }
 
 void setup() {
     // Initialize serial communication
-    SP.initialize(9600,1000);
+    SP.initialize(19200,1000);
     set_log_lvl(LOG_DEBUG);
     toggle_logs(true);
 
+    SP.blocking_wait(0);
     LOG_SHORT(LOG_INFO,"Serial communication started.");
 
     // Load the model

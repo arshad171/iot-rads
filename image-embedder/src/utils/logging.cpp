@@ -6,13 +6,7 @@
 #include <stdlib.h>
 
 // Display names for the log levels
-char *log_lvl_names[5] = {
-    "<span style=\"color: #505050;\">[</span><span style=\"color: #40E0D0;\">DBG</span><span style=\"color: #505050;\">]</span>",
-    "<span style=\"color: #505050;\">[</span><span style=\"color: #00BFFF;\">INF</span><span style=\"color: #505050;\">]</span>",
-    "<span style=\"color: #505050;\">[</span><span style=\"color: #FFD700;\">WRN</span><span style=\"color: #505050;\">]</span>",
-    "<span style=\"color: #505050;\">[</span><span style=\"color: #FF0000;\">ERR</span><span style=\"color: #505050;\">]</span>",
-    "<span style=\"color: #505050;\">[</span><span style=\"color: #8B0000;\">DED</span><span style=\"color: #505050;\">]</span>"
-};
+char *log_lvl_names[5] = {"DBG","INF","WRN","ERR","DED"};
 
 int curr_log_lvl = LOG_INFO;
 int do_logging = true;
@@ -61,12 +55,12 @@ void log(int log_level,char *file_name,int line_no,char *msg_format,...) {
     char *log_buffer;
 
     if(file_name != 0) {
-        char *log_pattern = "%s (%s:%d) %s";
+        char *log_pattern = "[%s] (%s:%d) %s";
         log_size = snprintf(nullptr,0,log_pattern,log_lvl_names[log_level],file_name,line_no,msg_buffer);
         log_buffer = (char *) memalloc((log_size+1)*sizeof(char));
         sprintf(log_buffer,log_pattern,log_lvl_names[log_level],file_name,line_no,msg_buffer);
     } else {
-        char *log_pattern = "%s %s";
+        char *log_pattern = "[%s] %s";
         log_size = snprintf(nullptr,0,log_pattern,log_lvl_names[log_level],msg_buffer);
         log_buffer = (char *) memalloc((log_size+1)*sizeof(char));
         sprintf(log_buffer,log_pattern,log_lvl_names[log_level],msg_buffer);
