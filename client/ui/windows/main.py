@@ -134,17 +134,17 @@ class MainWindow(QMainWindow):
     @pyqtSlot(str)
     def append_log1(self, log: str):
         """Append log lines in the log pane"""
-        self.__log1_txt.appendPlainText(log)
+        self.__log1_txt.appendHtml(log)
 
     @pyqtSlot(str)
     def append_log2(self, log: str):
         """Append log lines in the log pane"""
-        self.__log2_txt.appendPlainText(log)
+        self.__log2_txt.appendHtml(log)
 
     @pyqtSlot(str)
     def append_log3(self, log: str):
         """Append log lines in the log pane"""
-        self.__log3_txt.appendPlainText(log)
+        self.__log3_txt.appendHtml(log)
 
     @pyqtSlot(str)
     def update_statusbar(self, status: str):
@@ -339,6 +339,6 @@ class MainThread(QThread):
                 self.__handlers[self.__curr_handler].send(Packet(None,Command.NO_FEATURE_VECTOR,DataType.CMD))
         elif src == "Client":
             # We use the internal data generator
-            x = self.__generator.get_next_sample()
+            x = self.__generator.get_next_sample()[:100]
             GLOBAL_SIGNALS.status_signal.emit(f"Sending feature vector {str(x.shape).replace(' ','')}")
             self.__handlers[self.__curr_handler].send(Packet(x,cmd,DataType.MAT))
