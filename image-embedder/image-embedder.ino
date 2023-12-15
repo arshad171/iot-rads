@@ -47,7 +47,7 @@ namespace {
     TfLiteTensor* output = nullptr;
 
     // Tensor arena (memory region allocated to Tensorflow)
-    constexpr int tensor_arena_size = 100 * 1024;
+    constexpr int tensor_arena_size = 195 * 1024;
     alignas(16) uint8_t tensor_arena[tensor_arena_size];
 }
 
