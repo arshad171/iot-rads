@@ -59,7 +59,7 @@ BLA::Matrix<out3, 1> dLdb3;
 BLA::Matrix<out4, 1> dLdb4;
 
 
-BLA::Matrix<FEATURE_DIM, BATCH_SIZE> predict(BLA::Matrix<FEATURE_DIM, BATCH_SIZE> x) {
+float predict(BLA::Matrix<FEATURE_DIM, BATCH_SIZE> x) {
   float loss;
   // forward
   h1 = network.lin1.forward(x);
@@ -236,40 +236,44 @@ float get_training_loss() {
 
 // Blocking training
 bool receive_feature_vector(int batchIndex) {
-  bool success = false;
-  bool awaitResponse = true;
+    bool success = false;
+    bool awaitResponse = true;
 
-  for (int maxIters = 10; (maxIters > 0) && (awaitResponse); maxIters--) {
-    Packet incoming = SP.recv();
+    for (int maxIters = 10; (maxIters > 0) && (awaitResponse); maxIters--) {
+        Packet incoming = SP.recv();
 
-    // Check we actually got a packet
-    if (incoming.header.magic[0] == 0) {
-      continue;
+        // Check we actually got a packet
+        if (incoming.header.magic[0] == 0) {
+            continue;
+        }
+
+        LOG_SHORT(LOG_DEBUG, "Received packet with %d byte payload", incoming.header.size);
+        if (incoming.header.command == Cmd::SET_TRAINING_VECTOR) {
+            if (incoming.header.type != DType::MAT) {
+                LOG(LOG_ERROR, "Received feature vector of wrong type %d", incoming.header.type);
+                if(incoming.data != nullptr) {
+                    free(incoming.data);
+                }
+                continue;
+            }
+
+            RichMatrix *matrix = (RichMatrix *)incoming.data;
+            uint16_t r = matrix->metadata.rows;
+            uint16_t c = matrix->metadata.cols;
+            LOG_SHORT(LOG_DEBUG, "Received %dx%d feature vector (%d)", r, c, r * c);
+
+            float *features = (float *)matrix->data;
+            LOG_SHORT(LOG_DEBUG, "%f||%f||%f||%f", features[0], features[1], features[(r * c) - 2], features[(r * c) - 1]);
+            for (int r = 0; r < xBatch.Rows; r++) {
+              xBatch(r, batchIndex) = features[r];
+            }
+
+            free(incoming.data);
+            awaitResponse = false;
+            success = true;
+        }
     }
-
-    LOG_SHORT(LOG_DEBUG, "Received packet with %d byte payload", incoming.header.size);
-    if (incoming.header.command == Cmd::SET_FEATURE_VECTOR) {
-      if (incoming.header.type != DType::MAT) {
-        LOG(LOG_ERROR, "Received feature vector of wrong type %d", incoming.header.type);
-        continue;
-      }
-
-      RichMatrix *matrix = (RichMatrix *)incoming.data;
-      uint16_t r = matrix->metadata.rows;
-      uint16_t c = matrix->metadata.cols;
-      LOG_SHORT(LOG_DEBUG, "Received %dx%d feature vector (%d)", r, c, r * c);
-
-      float *features = (float *)matrix->data;
-      LOG_SHORT(LOG_DEBUG, "%f||%f||%f||%f", features[0], features[1], features[(r * c) - 2], features[(r * c) - 1]);
-      for (int r = 0; r < xBatch.Rows; r++) {
-        xBatch(r, batchIndex) = features[r];
-      }
-
-      awaitResponse = false;
-      success = true;
-    }
-  }
-  return success;
+    return success;
 }
 
 void updateXBatch(bool trainingData) {

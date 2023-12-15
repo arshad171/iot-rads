@@ -31,3 +31,5 @@ void begin_training();
 bool process_feature(RichMatrix *vector);
 float get_training_loss();
 void blocking_train();
+
+float predict(BLA::Matrix<FEATURE_DIM, BATCH_SIZE> x);
