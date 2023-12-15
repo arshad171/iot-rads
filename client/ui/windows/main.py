@@ -40,6 +40,7 @@ class MainWindow(QMainWindow):
     # These must be statically declared
     __signal_append_log1 = pyqtSignal(str)
     __signal_append_log2 = pyqtSignal(str)
+    __signal_append_log3 = pyqtSignal(str)
     __signal_picture_set = pyqtSignal(Image)
     __signal_b_roll_set  = pyqtSignal(Image)
 
@@ -52,17 +53,23 @@ class MainWindow(QMainWindow):
         # Load handles to relevant window components
         self.__log1_txt = self.findChild(QPlainTextEdit, "log1_txt")
         self.__log2_txt = self.findChild(QPlainTextEdit, "log2_txt")
+        self.__log3_txt = self.findChild(QPlainTextEdit, "log3_txt")
         self.__status = self.findChild(QStatusBar, "statusbar")
         self.__frame = self.findChild(QLabel, "frame_lbl")
         self.__save_btn = self.findChild(QPushButton, "save_btn")
+        self.__load_btn = self.findChild(QPushButton, "load_btn")
+        self.__infer_btn = self.findChild(QPushButton,"infer_btn")
         self.__shutter = self.findChild(QPushButton, "shutter_btn")
         self.__refresh = self.findChild(QPushButton, "refresh_btn")
         self.__ssel1 = self.findChild(QComboBox, "ssel1_cmb")
         self.__ssel2 = self.findChild(QComboBox, "ssel2_cmb")
+        self.__ssel3 = self.findChild(QComboBox, "ssel3_cmb")
         self.__conn1_btn = self.findChild(QPushButton, "conn1_btn")
         self.__conn2_btn = self.findChild(QPushButton, "conn2_btn")
+        self.__conn3_btn = self.findChild(QPushButton, "conn3_btn")
         self.__pic_src_cmb = self.findChild(QComboBox,"src_pic_cmb")
         self.__data_src_cmb = self.findChild(QComboBox,"src_dat_cmb")
+        self.__inference_src_cmb = self.findChild(QComboBox,"src_inf_cmb")
         self.__broll_shutter = self.findChild(QPushButton,"broll_btn")
         self.__broll_count = self.findChild(QSpinBox,"broll_sbox")
 
@@ -71,6 +78,9 @@ class MainWindow(QMainWindow):
 
         # Pictures received from Arduino
         self.__picture = None
+
+        # Inference flag
+        self.inference_requested = False
 
         # B-Rolls received from Arduibo
         self.__broll_path = None
@@ -83,6 +93,7 @@ class MainWindow(QMainWindow):
         # Register protocol signal handlers
         self.__signal_append_log1.connect(self.append_log1)
         self.__signal_append_log2.connect(self.append_log2)
+        self.__signal_append_log3.connect(self.append_log3)
         self.__signal_picture_set.connect(self.picture_set)
         self.__signal_b_roll_set.connect(self.handle_broll)
 
@@ -91,24 +102,33 @@ class MainWindow(QMainWindow):
 
         # Register UI signal handlers
         self.__save_btn.clicked.connect(self.save_picture)
+        self.__load_btn.clicked.connect(self.load_picture)
         self.__shutter.clicked.connect(self.get_frame)
         self.__refresh.clicked.connect(self.refresh)
         self.__conn1_btn.clicked.connect(self.connection1)
         self.__conn2_btn.clicked.connect(self.connection2)
+        self.__conn3_btn.clicked.connect(self.connection3)
         self.__broll_shutter.clicked.connect(self.begin_broll)
+        self.__infer_btn.clicked.connect(self.infer)
 
         # Hook up signal handlers to the protocol
         self.__handlers[0].hook_cmd(Command.WRITE_LOG,self.__signal_append_log1)
         self.__handlers[0].hook_cmd(Command.SET_FRAME,self.__signal_picture_set)
         self.__handlers[1].hook_cmd(Command.WRITE_LOG,self.__signal_append_log2)
         self.__handlers[1].hook_cmd(Command.SET_FRAME,self.__signal_picture_set)
+        self.__handlers[2].hook_cmd(Command.WRITE_LOG,self.__signal_append_log3)
+        self.__handlers[2].hook_cmd(Command.SET_FRAME,self.__signal_picture_set)
 
         # Initialize the comboboxes
         self.refresh()
 
-    def get_active_source(self) -> str:
+    def get_active_data_source(self) -> str:
         """ Returns the index of the active data source """
         return self.__data_src_cmb.currentText()
+
+    def get_active_inference_source(self) -> int:
+        """ Returns the index of the active data source """
+        return self.__inference_src_cmb.currentIndex()
 
     # Signal handlers for UI-related actions
     @pyqtSlot(str)
@@ -120,6 +140,11 @@ class MainWindow(QMainWindow):
     def append_log2(self, log: str):
         """Append log lines in the log pane"""
         self.__log2_txt.appendPlainText(log)
+
+    @pyqtSlot(str)
+    def append_log3(self, log: str):
+        """Append log lines in the log pane"""
+        self.__log3_txt.appendPlainText(log)
 
     @pyqtSlot(str)
     def update_statusbar(self, status: str):
@@ -146,6 +171,13 @@ class MainWindow(QMainWindow):
             self.__picture.save(fname, "PNG")
 
     @pyqtSlot()
+    def load_picture(self):
+        """ Load picture from disk """
+        fname,_ = QFileDialog.getOpenFileName(self,"Load picture...","","PNG Images (*.png)")
+        if fname:
+            self.picture_set(PILImage.open(fname))
+
+    @pyqtSlot()
     def get_frame(self):
         """Sends a picture request to the arduino"""
         idx = self.__pic_src_cmb.currentIndex()
@@ -164,6 +196,8 @@ class MainWindow(QMainWindow):
         self.__ssel1.addItems(paths)
         self.__ssel2.clear()
         self.__ssel2.addItems(paths)
+        self.__ssel3.clear()
+        self.__ssel3.addItems(paths)
 
     @pyqtSlot()
     def connection1(self):
@@ -188,6 +222,17 @@ class MainWindow(QMainWindow):
             self.__conn2_btn.setText("C")
 
     @pyqtSlot()
+    def connection3(self):
+        """Handles request to change the connection status of the third pane"""
+        if not self.__handlers[2].has_backend():
+            self.__handlers[2].set_backend(SerialChannel(self.__ssel3.currentText(),19200,self.__interval))
+            self.__log3_txt.clear()
+            self.__conn3_btn.setText("D")
+        else:
+            self.__handlers[2].stop()
+            self.__conn3_btn.setText("C")
+
+    @pyqtSlot()
     def begin_broll(self):
         """ Begins a B-Roll procedure """
         self.__broll_path = QFileDialog.getExistingDirectory(self,"Select B-Roll directory")
@@ -206,6 +251,11 @@ class MainWindow(QMainWindow):
         self.__picture.save(os.path.join(self.__broll_path,f"{str(self.__broll_idx)}.png"), "PNG")
         self.__broll_idx += 1
 
+    @pyqtSlot()
+    def infer(self):
+        """ Request inference """
+        self.inference_requested = True
+
 
 class MainThread(QThread):
     """Main thread of the client"""
@@ -223,6 +273,7 @@ class MainThread(QThread):
         self.__handlers = [
             Protocol(None),
             Protocol(None),
+            Protocol(None)
         ]
 
         # Register handlers
@@ -273,22 +324,28 @@ class MainThread(QThread):
 
     # Protocol handling
     def __receive_feature_vector(self, data: np.ndarray):
-        self.__feature_vector = data
+        self.__feature_vector = data.astype(np.float32)
 
     def __provide_feature_vector(self, data: None):
-        src = self.__window.get_active_source()
+        src = self.__window.get_active_data_source()
+        if self.__window.inference_requested and self.__curr_handler == self.__window.get_active_inference_source():
+            cmd = Command.SET_INFERENCE_VECTOR
+        else:
+            cmd = Command.SET_TRAINING_VECTOR
+        self.__window.inference_requested = False
+
         if src == "Arduino":
             # We get the feature vector from arduino
             if self.__feature_vector is not None:
                 GLOBAL_SIGNALS.status_signal.emit(f"Sending feature vector {str(self.__feature_vector.shape).replace(' ','')}")
-                self.__handlers[self.__curr_handler].send(Packet(self.__feature_vector,Command.SET_FEATURE_VECTOR,DataType.MAT))
+                self.__handlers[self.__curr_handler].send(Packet(self.__feature_vector,cmd,DataType.MAT))
             else:
                 self.__handlers[self.__curr_handler].send(Packet(None,Command.NO_FEATURE_VECTOR,DataType.CMD))
         elif src == "Client":
             # We use the internal data generator
             x = self.__generator.get_next_sample()
             GLOBAL_SIGNALS.status_signal.emit(f"Sending feature vector {str(x.shape).replace(' ','')}")
-            self.__handlers[self.__curr_handler].send(Packet(x,Command.SET_FEATURE_VECTOR,DataType.MAT))
+            self.__handlers[self.__curr_handler].send(Packet(x,cmd,DataType.MAT))
 
     def __save_weights(self, data):
         layer_index, weights, bias = data

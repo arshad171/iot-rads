@@ -21,7 +21,7 @@ enum State {
 
 // Runtime variables
 static RichMatrix *feature_vector = nullptr;
-static BLERole role = BLERole::CENTRAL;
+static BLERole role = BLERole::PERIPHERAL;
 static State state = State::SYNC_WEIGHTS;
 static int patience;
 
@@ -273,7 +273,8 @@ void loop() {
                     break;
             }
 
-            case Cmd::SET_FEATURE_VECTOR: {
+            // We're doing training Jesse
+            case Cmd::SET_TRAINING_VECTOR: {
                 if(incoming.header.type != DType::MAT) {
                     LOG(LOG_ERROR,"Received feature vector of wrong type %d",incoming.header.type);
                     break;
@@ -309,6 +310,37 @@ void loop() {
                 send_layer_weights(2);
                 send_layer_weights(3);
                 send_layer_weights(4);
+                break;
+            }
+            // We're doing inference Waltuh
+            case Cmd::SET_INFERENCE_VECTOR: {
+                if(incoming.header.type != DType::MAT) {
+                    LOG(LOG_ERROR,"Received feature vector of wrong type %d",incoming.header.type);
+                    break;
+                }
+
+                RichMatrix *vector = (RichMatrix *) incoming.data;
+                const uint16_t r = vector->metadata.rows;
+                const uint16_t c = vector->metadata.cols;
+                LOG_SHORT(LOG_DEBUG,"Received %dx%d inference vector (%d)",r,c,r*c);
+
+                if(r != FEATURE_DIM || c != 1) {
+                    LOG_SHORT(LOG_ERROR,"Inference vector has wrong dimension");
+                    break;
+                }
+
+                // Allocate the prediction vector
+                float *data = (float *) vector->data;
+                BLA::Matrix<FEATURE_DIM,BATCH_SIZE> prediction_vector;
+                for(int i=0; i < r; i++) {
+                    prediction_vector(i,0) = data[i];
+                    prediction_vector(i,1) = data[i];
+                }
+
+                // Pass the feature vector to training code
+                float loss = predict(prediction_vector);
+                LOG_SHORT(LOG_INFO,"Prediction loss: %f", loss);
+                break;
             }
 
             // We requested a feature vector but none was available
