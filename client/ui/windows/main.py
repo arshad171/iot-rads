@@ -125,18 +125,20 @@ class MainWindow(QMainWindow):
         self.__weight_load_btn.clicked.connect(self.weight_load)
 
         # Hook up signal handlers to the protocol
-        self.__handlers[0].hook_cmd(Command.WRITE_LOG,self.__signal_append_log1)
-        self.__handlers[0].hook_cmd(Command.SET_FRAME,self.__signal_picture_set)
-        self.__handlers[1].hook_cmd(Command.WRITE_LOG,self.__signal_append_log2)
-        self.__handlers[1].hook_cmd(Command.SET_FRAME,self.__signal_picture_set)
-        self.__handlers[2].hook_cmd(Command.WRITE_LOG,self.__signal_append_log3)
-        self.__handlers[2].hook_cmd(Command.SET_FRAME,self.__signal_picture_set)
+        self.__handlers[0].hook_cmd(Command.WRITE_LOG, self.__signal_append_log1)
+        self.__handlers[0].hook_cmd(Command.SET_FRAME, self.__signal_picture_set)
+        self.__handlers[1].hook_cmd(Command.WRITE_LOG, self.__signal_append_log2)
+        self.__handlers[1].hook_cmd(Command.SET_FRAME, self.__signal_picture_set)
+        self.__handlers[2].hook_cmd(Command.WRITE_LOG, self.__signal_append_log3)
+        self.__handlers[2].hook_cmd(Command.SET_FRAME, self.__signal_picture_set)
 
         # Initialize the comboboxes
         self.refresh()
 
+        self._send_layer_index = 1
+
     def get_active_data_source(self) -> str:
-        """ Returns the index of the active data source """
+        """Returns the index of the active data source"""
         return self.__data_src_cmb.currentText()
 
     def get_active_inference_source(self) -> int:
@@ -414,3 +416,21 @@ class MainThread(QThread):
 
         np.save(f"{layer_index}_weights.npy", weights)
         np.save(f"{layer_index}_bias.npy", bias)
+
+    def __load_weights(self):
+        weights = np.load(f"{self._send_layer_index}_weights.npy")
+        bias = np.load(f"{self._send_layer_index}_bias.npy")
+        self.__handlers[self.__curr_handler].send(
+            Packet(
+                data={
+                    "layer_index": self._send_layer_index,
+                    "weights": weights,
+                    "bias": bias,
+                },
+                command=Command.SET_LOAD_WEIGHTS,
+                dtype=DataType.WTS,
+            )
+        )
+
+        # every click sends the next layer
+        self._send_layer_index = (self._send_layer_index) % 4 + 1

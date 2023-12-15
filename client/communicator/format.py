@@ -50,6 +50,8 @@ class Command(Enum):
     SET_BROLL = (10, "Store a series of pictures from the camera")
     GET_WEIGHTS = (11, "request layer weights")
     SET_WEIGHTS = (12, "set layer weights")
+    GET_LOAD_WEIGHTS = (13, "load weights request")
+    SET_LOAD_WEIGHTS = (14, "load weights response")
 
     def __init__(self, cid, label):
         self.id = cid

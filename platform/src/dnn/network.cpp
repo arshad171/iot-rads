@@ -234,44 +234,44 @@ bool process_feature(RichMatrix *vector) {
 
 // Blocking training
 bool receive_feature_vector(int batchIndex) {
-    bool success = false;
-    bool awaitResponse = true;
+  bool success = false;
+  bool awaitResponse = true;
 
-    for (int maxIters = 10; (maxIters > 0) && (awaitResponse); maxIters--) {
-        Packet incoming = SP.recv();
+  for (int maxIters = 10; (maxIters > 0) && (awaitResponse); maxIters--) {
+    Packet incoming = SP.recv();
 
-        // Check we actually got a packet
-        if (incoming.header.magic[0] == 0) {
-            continue;
-        }
-
-        LOG_SHORT(LOG_DEBUG, "Received packet with %d byte payload", incoming.header.size);
-        if (incoming.header.command == Cmd::SET_TRAINING_VECTOR) {
-            if (incoming.header.type != DType::MAT) {
-                LOG(LOG_ERROR, "Received feature vector of wrong type %d", incoming.header.type);
-                if(incoming.data != nullptr) {
-                    free(incoming.data);
-                }
-                continue;
-            }
-
-            RichMatrix *matrix = (RichMatrix *)incoming.data;
-            uint16_t r = matrix->metadata.rows;
-            uint16_t c = matrix->metadata.cols;
-            LOG_SHORT(LOG_DEBUG, "Received %dx%d feature vector (%d)", r, c, r * c);
-
-            float *features = (float *)matrix->data;
-            LOG_SHORT(LOG_DEBUG, "%f||%f||%f||%f", features[0], features[1], features[(r * c) - 2], features[(r * c) - 1]);
-            for (int r = 0; r < xBatch.Rows; r++) {
-              xBatch(r, batchIndex) = features[r];
-            }
-
-            free(incoming.data);
-            awaitResponse = false;
-            success = true;
-        }
+    // Check we actually got a packet
+    if (incoming.header.magic[0] == 0) {
+      continue;
     }
-    return success;
+
+    LOG_SHORT(LOG_DEBUG, "Received packet with %d byte payload", incoming.header.size);
+    if (incoming.header.command == Cmd::SET_TRAINING_VECTOR) {
+      if (incoming.header.type != DType::MAT) {
+        LOG(LOG_ERROR, "Received feature vector of wrong type %d", incoming.header.type);
+        if(incoming.data != nullptr) {
+          free(incoming.data);
+        }
+        continue;
+      }
+
+      RichMatrix *matrix = (RichMatrix *)incoming.data;
+      uint16_t r = matrix->metadata.rows;
+      uint16_t c = matrix->metadata.cols;
+      LOG_SHORT(LOG_DEBUG, "Received %dx%d feature vector (%d)", r, c, r * c);
+
+      float *features = (float *)matrix->data;
+      LOG_SHORT(LOG_DEBUG, "%f||%f||%f||%f", features[0], features[1], features[(r * c) - 2], features[(r * c) - 1]);
+      for (int r = 0; r < xBatch.Rows; r++) {
+        xBatch(r, batchIndex) = features[r];
+      }
+
+      free(incoming.data);
+      awaitResponse = false;
+      success = true;
+    }
+  }
+  return success;
 }
 
 void updateXBatch(bool trainingData) {
@@ -387,4 +387,55 @@ void send_layer_weights(uint16_t layerIndex) {
   pack((byte *)layerWeights, size, DType::WTS, Cmd::SET_WEIGHTS, &SP);
 
   free(layerWeights);
+}
+
+void load_layer_weights(RichLayerWeights *layerWeights) {
+  LOG_SHORT(LOG_DEBUG, "%d %d %d", layerWeights->rows, layerWeights->cols, layerWeights->layerIndex);
+  float *layerWeightsFloat = (float *)layerWeights->layerWeights;
+
+  LOG_SHORT(LOG_DEBUG, "-----layer: %d", layerWeights->layerIndex);
+  switch (layerWeights->layerIndex) {
+    case (1):
+      {
+        memcpy(&layerWeights->layerWeights[6], network.lin1.weights.storage, layerWeights->rows * layerWeights->cols);
+        memcpy(&layerWeights->layerWeights[6 + layerWeights->rows * layerWeights->cols], network.lin1.bias.storage, layerWeights->rows);
+
+        LOG_SHORT(LOG_DEBUG, "weights %f %f %f %f", network.lin1.weights(0, 0), network.lin1.weights(0, 1), network.lin1.weights(0, 2), network.lin1.weights(0, 3));
+        LOG_SHORT(LOG_DEBUG, "bias %f %f %f %f", network.lin1.bias(0, 0), network.lin1.bias(0, 1), network.lin1.bias(0, 2), network.lin1.bias(0, 3));
+        break;
+      }
+
+    case (2):
+      {
+        memcpy(&layerWeights->layerWeights[6], network.lin2.weights.storage, layerWeights->rows * layerWeights->cols);
+        memcpy(&layerWeights->layerWeights[6 + layerWeights->rows * layerWeights->cols], network.lin2.bias.storage, layerWeights->rows);
+
+        LOG_SHORT(LOG_DEBUG, "weights %f %f %f %f", network.lin2.weights(0, 0), network.lin2.weights(0, 1), network.lin2.weights(0, 2), network.lin2.weights(0, 3));
+        LOG_SHORT(LOG_DEBUG, "bias %f %f %f %f", network.lin2.bias(0, 0), network.lin2.bias(0, 1), network.lin2.bias(0, 2), network.lin2.bias(0, 3));
+        break;
+      }
+
+    case (3):
+      {
+        memcpy(&layerWeights->layerWeights[6], network.lin3.weights.storage, layerWeights->rows * layerWeights->cols);
+        memcpy(&layerWeights->layerWeights[6 + layerWeights->rows * layerWeights->cols], network.lin3.bias.storage, layerWeights->rows);
+
+        LOG_SHORT(LOG_DEBUG, "weights %f %f %f %f", network.lin3.weights(0, 0), network.lin3.weights(0, 1), network.lin3.weights(0, 2), network.lin3.weights(0, 3));
+        LOG_SHORT(LOG_DEBUG, "bias %f %f %f %f", network.lin3.bias(0, 0), network.lin3.bias(0, 1), network.lin3.bias(0, 2), network.lin3.bias(0, 3));
+        break;
+      }
+
+    case (4):
+      {
+        memcpy(&layerWeights->layerWeights[6], network.lin4.weights.storage, layerWeights->rows * layerWeights->cols);
+        memcpy(&layerWeights->layerWeights[6 + layerWeights->rows * layerWeights->cols], network.lin4.bias.storage, layerWeights->rows);
+
+        LOG_SHORT(LOG_DEBUG, "weights %f %f %f %f", network.lin4.weights(0, 0), network.lin4.weights(0, 1), network.lin4.weights(0, 2), network.lin4.weights(0, 3));
+        LOG_SHORT(LOG_DEBUG, "bias %f %f %f %f", network.lin4.bias(0, 0), network.lin4.bias(0, 1), network.lin4.bias(0, 2), network.lin4.bias(0, 3));
+        break;
+      }
+    default:
+      break;
+  }
+  LOG_SHORT(LOG_INFO, "loaded layer: %d", layerWeights->layerIndex);
 }

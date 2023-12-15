@@ -29,7 +29,10 @@ enum Cmd : byte { // Commands that can be sent to or received from other devices
     SET_BROLL,
 
     GET_WEIGHTS, // would be the request from the client
-    SET_WEIGHTS // response from the client
+    SET_WEIGHTS, // response from the client
+
+    GET_LOAD_WEIGHTS, // load weights request
+    SET_LOAD_WEIGHTS // load weights response
 };
 
 // Protocol packet

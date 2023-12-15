@@ -64,8 +64,9 @@ class SerialChannel(Backend):
 
         while not self.__port.is_open and not self.__abort_event.is_set():
             try:
-                self.__port = Serial(self.__path,self.__baud,timeout=self.__tout,write_timeout=self.__tout,parity=PARITY_NONE,
+                self.__port = Serial(self.__path,self.__baud,timeout=self.__tout,write_timeout=100,parity=PARITY_NONE,
                                      bytesize=EIGHTBITS,stopbits=STOPBITS_ONE)
+                self.__port.flush()
                 continue
             except SerialException:
                 pass
