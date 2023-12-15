@@ -19,7 +19,9 @@ from PyQt6.QtWidgets import (
     QFileDialog,
     QPushButton,
     QComboBox,
-    QSpinBox
+    QSpinBox,
+    QMessageBox,
+    QLineEdit
 )
 from PyQt6.QtCore import QThread, pyqtSignal, pyqtSlot
 from generator import ImageDataGeneratorHandler
@@ -43,6 +45,8 @@ class MainWindow(QMainWindow):
     __signal_append_log3 = pyqtSignal(str)
     __signal_picture_set = pyqtSignal(Image)
     __signal_b_roll_set  = pyqtSignal(Image)
+
+    signal_message_box   = pyqtSignal(str,str,str)
 
     def __init__(self, handlers: List[Protocol], interval: int):
         super().__init__()  # Initialize the Qt interface
@@ -75,6 +79,7 @@ class MainWindow(QMainWindow):
         self.__weight_src_cmb = self.findChild(QComboBox,"src_w_cmb")
         self.__weight_save_btn = self.findChild(QPushButton,"w_save_btn")
         self.__weight_load_btn = self.findChild(QPushButton,"w_load_btn")
+        self.__thresh_text = self.findChild(QLineEdit,"thresh_txt")
 
         # List of attached arduino devices
         self.__devices = []
@@ -99,6 +104,9 @@ class MainWindow(QMainWindow):
         self.__signal_append_log3.connect(self.append_log3)
         self.__signal_picture_set.connect(self.picture_set)
         self.__signal_b_roll_set.connect(self.handle_broll)
+
+        # Register the message box handler
+        self.signal_message_box.connect(self.display_alert)
 
         # Register global signal handlers
         GLOBAL_SIGNALS.status_signal.connect(self.update_statusbar)
@@ -136,6 +144,12 @@ class MainWindow(QMainWindow):
     def get_active_inference_source(self) -> int:
         """ Returns the index of the active data source """
         return self.__inference_src_cmb.currentIndex()
+
+    def get_current_threshold(self) -> float:
+        try:
+            return float(self.__thresh_text.text())
+        except ValueError:
+            return 0.0
 
     # Signal handlers for UI-related actions
     @pyqtSlot(str)
@@ -272,10 +286,27 @@ class MainWindow(QMainWindow):
     def weight_load(self):
         pass
 
+    @pyqtSlot(str,str,str)
+    def display_alert(self,title: str, text: str, icon: str):
+        icons = {
+            "info": QMessageBox.Icon.Information,
+            "warn": QMessageBox.Icon.Warning,
+            "err": QMessageBox.Icon.Critical
+        }
+
+        dlg = QMessageBox(self)
+        dlg.setWindowTitle(title)
+        dlg.setText(text)
+        dlg.setIcon(icons[icon])
+        dlg.exec()
+
+
 
 class MainThread(QThread):
     """Main thread of the client"""
     INTERVAL = 0.1
+    MIN = 7.175088256872186e-08
+    MAX = 1.5143336895562243e-06
 
     def __init__(self):
         # Initialize PyQt interface
@@ -308,6 +339,11 @@ class MainThread(QThread):
             # receive and save weights
             handler.register_cmd_direct(
                 Command.SET_WEIGHTS, self.__save_weights
+            )
+
+            # receive inference results
+            handler.register_cmd_direct(
+                Command.REPORT_ANOMALY, self.__handle_inference_result
             )
 
         # Prepare the data generator
@@ -348,7 +384,6 @@ class MainThread(QThread):
         if self.__window.inference_requested and self.__curr_handler == inference_src:
             ImageShow.show(self.__window.picture)
             features = self.__generator.get_feature_vector(self.__window.picture.convert("L"))
-            print("THE FLIPPING FEATURES:")
             print(features)
 
             GLOBAL_SIGNALS.status_signal.emit(f"Sending inference vector {str(features.shape).replace(' ','')}")
@@ -368,6 +403,13 @@ class MainThread(QThread):
                 features,_ = self.__generator.next()
                 GLOBAL_SIGNALS.status_signal.emit(f"Sending feature vector {str(features.shape).replace(' ','')}")
                 self.__handlers[self.__curr_handler].send(Packet(features,Command.SET_TRAINING_VECTOR,DataType.MAT))
+    
+    def __handle_inference_result(self, data):
+        thresh = self.__window.get_current_threshold()
+        if data > thresh:
+            self.__window.signal_message_box.emit("Anomaly detected!",f"The anomaly score of the picture is {data:.15f}.\n!!! ANOMALY DETECTED !!!","warn")
+        else:
+            self.__window.signal_message_box.emit("Inference results",f"The anomaly score of the picture is {data:.15f}","info")
 
     def __save_weights(self, data):
         layer_index, weights, bias = data

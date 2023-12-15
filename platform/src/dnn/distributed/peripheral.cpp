@@ -41,14 +41,14 @@ namespace BLE_PERIPHERAL {
     void blePeripheralConnectHandler(BLEDevice central)
     {
       // central connected event handler
-      LOG_SHORT(LOG_INFO, "BLE::connected event central: %s", central.address());
+      LOG_SHORT(LOG_INFO, "BLE::connected event central");
       BLE.advertise();
     }
 
     void blePeripheralDisconnectHandler(BLEDevice central)
     {
       // central disconnected event handler
-      LOG_SHORT(LOG_INFO, "BLE::disconnected event central: %s", central.address());
+      LOG_SHORT(LOG_INFO, "BLE::disconnected event central");
       BLE.advertise();
       sendFlag = true;
     }
