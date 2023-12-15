@@ -8,7 +8,8 @@ enum DType : byte { // Types of data that can be transmitted
     IMG,
     CMD, // Empty packet - just command
     DAT,
-    WTS
+    WTS,
+    FLT
 };
 
 enum Cmd : byte { // Commands that can be sent to or received from other devices

@@ -94,6 +94,11 @@ def register_datatype_decoders(handler: Protocol):
 
         return layer_index, weights_mat, bias_mat
 
+    @handler.register_decoder(dtype=DataType.FLT)
+    def decode_float(data: bytes) -> float:
+        value = struct.unpack("<f",data)
+        return value
+
 
 def register_datatype_encoders(handler: Protocol):
     """Register encoders for the protocol"""
