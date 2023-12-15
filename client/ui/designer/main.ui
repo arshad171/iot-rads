@@ -48,7 +48,17 @@
        </layout>
       </item>
       <item>
-       <widget class="QPlainTextEdit" name="log1_txt"/>
+       <widget class="QPlainTextEdit" name="log1_txt">
+        <property name="acceptDrops">
+         <bool>false</bool>
+        </property>
+        <property name="undoRedoEnabled">
+         <bool>false</bool>
+        </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+       </widget>
       </item>
      </layout>
     </item>
@@ -82,7 +92,17 @@
        </layout>
       </item>
       <item>
-       <widget class="QPlainTextEdit" name="log2_txt"/>
+       <widget class="QPlainTextEdit" name="log2_txt">
+        <property name="acceptDrops">
+         <bool>false</bool>
+        </property>
+        <property name="undoRedoEnabled">
+         <bool>false</bool>
+        </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+       </widget>
       </item>
      </layout>
     </item>
@@ -94,6 +114,9 @@
          <widget class="QComboBox" name="ssel3_cmb">
           <property name="editable">
            <bool>true</bool>
+          </property>
+          <property name="placeholderText">
+           <string>Select Serial Device</string>
           </property>
          </widget>
         </item>
@@ -113,7 +136,17 @@
        </layout>
       </item>
       <item>
-       <widget class="QPlainTextEdit" name="log3_txt"/>
+       <widget class="QPlainTextEdit" name="log3_txt">
+        <property name="acceptDrops">
+         <bool>false</bool>
+        </property>
+        <property name="undoRedoEnabled">
+         <bool>false</bool>
+        </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+       </widget>
       </item>
      </layout>
     </item>
@@ -276,7 +309,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QComboBox" name="comboBox">
+              <widget class="QComboBox" name="src_inf_cmb">
                <item>
                 <property name="text">
                  <string>Arduino 1</string>
