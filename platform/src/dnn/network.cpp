@@ -77,7 +77,6 @@ float predict(BLA::Matrix<FEATURE_DIM, BATCH_SIZE> x) {
   // loss
   loss = sq.forward(x, h4);
   // loss for one sample, assuming the batch size has the same rows
-  loss *= BATCH_SIZE;
 
   return loss;
 }
@@ -298,4 +297,95 @@ void blocking_train() {
     loss /= NUM_ITERS;
     LOG_SHORT(LOG_INFO, "<span style=\"color: #FFD700;\">EPOCH %d || Loss: %f</span>", epoch, loss);
   }
+}
+
+void send_layer_weights(uint16_t layerIndex) {
+  int size = 6;
+  int inputSize = network.lin1.inputSize;
+  int outputSize = network.lin1.outputSize;
+  RichLayerWeights *layerWeights;
+
+  switch (layerIndex) {
+    case 1:
+      {
+        inputSize = network.lin1.inputSize;
+        outputSize = network.lin1.outputSize;
+
+        // weights (out * in) + bias (out)
+        size = size + (outputSize * inputSize) * sizeof(float) + outputSize * sizeof(float);
+        layerWeights = (RichLayerWeights *)memalloc(size);
+
+        layerWeights->rows = outputSize;
+        layerWeights->cols = inputSize;
+        layerWeights->layerIndex = layerIndex;
+
+        memcpy(layerWeights->layerWeights, network.lin1.weights.storage, (inputSize * outputSize) * sizeof(float));
+        byte *ptrOffset = &layerWeights->layerWeights[(inputSize * outputSize) * sizeof(float)];
+        memcpy(ptrOffset, network.lin1.bias.storage, (outputSize) * sizeof(float));
+
+        break;
+      }
+    case 2:
+      {
+        inputSize = network.lin2.inputSize;
+        outputSize = network.lin2.outputSize;
+
+        // weights (out * in) + bias (out)
+        size = size + (outputSize * inputSize) * sizeof(float) + outputSize * sizeof(float);
+        layerWeights = (RichLayerWeights *)memalloc(size);
+
+        layerWeights->rows = outputSize;
+        layerWeights->cols = inputSize;
+        layerWeights->layerIndex = layerIndex;
+
+        memcpy(layerWeights->layerWeights, network.lin2.weights.storage, (inputSize * outputSize) * sizeof(float));
+        byte *ptrOffset = &layerWeights->layerWeights[(inputSize * outputSize) * sizeof(float)];
+        memcpy(ptrOffset, network.lin2.bias.storage, (outputSize) * sizeof(float));
+
+        break;
+      }
+    case 3:
+      {
+        inputSize = network.lin3.inputSize;
+        outputSize = network.lin3.outputSize;
+
+        // weights (out * in) + bias (out)
+        size = size + (outputSize * inputSize) * sizeof(float) + outputSize * sizeof(float);
+        layerWeights = (RichLayerWeights *)memalloc(size);
+
+        layerWeights->rows = outputSize;
+        layerWeights->cols = inputSize;
+        layerWeights->layerIndex = layerIndex;
+
+        memcpy(layerWeights->layerWeights, network.lin3.weights.storage, (inputSize * outputSize) * sizeof(float));
+        byte *ptrOffset = &layerWeights->layerWeights[(inputSize * outputSize) * sizeof(float)];
+        memcpy(ptrOffset, network.lin3.bias.storage, (outputSize) * sizeof(float));
+
+        break;
+      }
+    case 4:
+      {
+        inputSize = network.lin4.inputSize;
+        outputSize = network.lin4.outputSize;
+
+        // weights (out * in) + bias (out)
+        size = size + (outputSize * inputSize) * sizeof(float) + outputSize * sizeof(float);
+        layerWeights = (RichLayerWeights *)memalloc(size);
+
+        layerWeights->rows = outputSize;
+        layerWeights->cols = inputSize;
+        layerWeights->layerIndex = layerIndex;
+
+        memcpy(layerWeights->layerWeights, network.lin4.weights.storage, (inputSize * outputSize) * sizeof(float));
+        byte *ptrOffset = &layerWeights->layerWeights[(inputSize * outputSize) * sizeof(float)];
+        memcpy(ptrOffset, network.lin4.bias.storage, (outputSize) * sizeof(float));
+
+        break;
+      }
+  }
+
+
+  pack((byte *)layerWeights, size, DType::WTS, Cmd::SET_WEIGHTS, &SP);
+
+  free(layerWeights);
 }

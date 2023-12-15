@@ -251,6 +251,14 @@ void loop() {
                 break;
             }
 
+            case Cmd::GET_WEIGHTS: {
+                LOG_SHORT(LOG_DEBUG,"serving GET_WEIGHTS request");
+                send_layer_weights(1);
+                send_layer_weights(2);
+                send_layer_weights(3);
+                send_layer_weights(4);
+                break;
+            }
             // We're doing inference Waltuh
             case Cmd::SET_INFERENCE_VECTOR: {
                 if(incoming.header.type != DType::MAT) {
