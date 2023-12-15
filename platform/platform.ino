@@ -286,7 +286,8 @@ void loop() {
 
                 // Pass the feature vector to training code
                 float loss = predict(prediction_vector);
-                LOG_SHORT(LOG_INFO,"<span style=\"color: #FFD700;\">Prediction loss: %f</span>", loss);
+                pack((byte *) &loss,sizeof(loss),DType::FLT,Cmd::REPORT_ANOMALY,&SP);
+                LOG_SHORT(LOG_INFO,"<span style=\"color: #FFD700;\">Prediction loss: %.15f</span>", loss);
                 break;
             }
 
