@@ -283,7 +283,7 @@ class ImageDataGeneratorHandler(ImageDataGenerator):
     def next(self) -> Tuple[np.ndarray, np.ndarray] | bytearray:
         """ Get the next embedding vector and image """
         embedding,image = super().next(False,True)
-        return np.expand_dims(embedding,axis=1), image
+        return embedding, image
 
     def get_feature_vector(self, image, apply_mask=True):
         return np.expand_dims(super().get_feature_vector(image, apply_mask),axis=1)
