@@ -77,7 +77,6 @@ float predict(BLA::Matrix<FEATURE_DIM, BATCH_SIZE> x) {
   // loss
   loss = sq.forward(x, h4);
   // loss for one sample, assuming the batch size has the same rows
-  loss *= BATCH_SIZE;
 
   return loss;
 }
