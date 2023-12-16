@@ -291,7 +291,7 @@ class MainWindow(QMainWindow):
         """ Sends weights to the device """
         weights = np.load(f"{self._send_layer_index}_weights.npy")
         bias = np.load(f"{self._send_layer_index}_bias.npy")
-        self.__handlers[self.__curr_handler].send(
+        self.__handlers[self.__weight_src_cmb.currentIndex()].send(
             Packet(
                 data={
                     "layer_index": self._send_layer_index,
@@ -402,7 +402,6 @@ class MainThread(QThread):
         data_src = self.__window.get_active_data_source()
         inference_src = self.__window.get_active_inference_source()
         if self.__window.inference_requested and self.__curr_handler == inference_src:
-            ImageShow.show(self.__window.picture)
             features = self.__generator.get_feature_vector(self.__window.picture.convert("L"))
             print(features)
 
