@@ -397,41 +397,89 @@ void load_layer_weights(RichLayerWeights *layerWeights) {
   switch (layerWeights->layerIndex) {
     case (1):
       {
-        memcpy(&layerWeights->layerWeights[6], network.lin1.weights.storage, layerWeights->rows * layerWeights->cols);
-        memcpy(&layerWeights->layerWeights[6 + layerWeights->rows * layerWeights->cols], network.lin1.bias.storage, layerWeights->rows);
-
+        LOG_SHORT(LOG_DEBUG, "---before");
         LOG_SHORT(LOG_DEBUG, "weights %f %f %f %f", network.lin1.weights(0, 0), network.lin1.weights(0, 1), network.lin1.weights(0, 2), network.lin1.weights(0, 3));
-        LOG_SHORT(LOG_DEBUG, "bias %f %f %f %f", network.lin1.bias(0, 0), network.lin1.bias(0, 1), network.lin1.bias(0, 2), network.lin1.bias(0, 3));
+        LOG_SHORT(LOG_DEBUG, "bias %f %f %f %f", network.lin1.bias(0, 0), network.lin1.bias(1, 0), network.lin1.bias(2, 0), network.lin1.bias(3, 0));
+
+        for (int r = 0; r < layerWeights->rows; r++) {
+          for (int c = 0; c < layerWeights->cols; c++) {
+            network.lin1.weights(r, c) = layerWeightsFloat[r * layerWeights->cols + c];
+          }
+        }
+
+        for (int r = 0; r < layerWeights->rows; r++) {
+          network.lin1.bias(r, 0) = layerWeightsFloat[layerWeights->rows * layerWeights->cols + r];
+        }
+
+        LOG_SHORT(LOG_DEBUG, "---after");
+        LOG_SHORT(LOG_DEBUG, "weights %f %f %f %f", network.lin1.weights(0, 0), network.lin1.weights(0, 1), network.lin1.weights(0, 2), network.lin1.weights(0, 3));
+        LOG_SHORT(LOG_DEBUG, "bias %f %f %f %f", network.lin1.bias(0, 0), network.lin1.bias(1, 0), network.lin1.bias(2, 0), network.lin1.bias(3, 0));
         break;
       }
 
     case (2):
       {
-        memcpy(&layerWeights->layerWeights[6], network.lin2.weights.storage, layerWeights->rows * layerWeights->cols);
-        memcpy(&layerWeights->layerWeights[6 + layerWeights->rows * layerWeights->cols], network.lin2.bias.storage, layerWeights->rows);
-
+        LOG_SHORT(LOG_DEBUG, "---before");
         LOG_SHORT(LOG_DEBUG, "weights %f %f %f %f", network.lin2.weights(0, 0), network.lin2.weights(0, 1), network.lin2.weights(0, 2), network.lin2.weights(0, 3));
-        LOG_SHORT(LOG_DEBUG, "bias %f %f %f %f", network.lin2.bias(0, 0), network.lin2.bias(0, 1), network.lin2.bias(0, 2), network.lin2.bias(0, 3));
+        LOG_SHORT(LOG_DEBUG, "bias %f %f", network.lin2.bias(0, 0), network.lin2.bias(1, 0));
+
+        for (int r = 0; r < layerWeights->rows; r++) {
+          for (int c = 0; c < layerWeights->cols; c++) {
+            network.lin2.weights(r, c) = layerWeightsFloat[r * layerWeights->cols + c];
+          }
+        }
+
+        for (int r = 0; r < layerWeights->rows; r++) {
+          network.lin2.bias(r, 0) = layerWeightsFloat[layerWeights->rows * layerWeights->cols + r];
+        }
+
+        LOG_SHORT(LOG_DEBUG, "---after");
+        LOG_SHORT(LOG_DEBUG, "weights %f %f %f %f", network.lin2.weights(0, 0), network.lin2.weights(0, 1), network.lin2.weights(0, 2), network.lin2.weights(0, 3));
+        LOG_SHORT(LOG_DEBUG, "bias %f %f", network.lin2.bias(0, 0), network.lin2.bias(1, 0));
         break;
       }
 
     case (3):
       {
-        memcpy(&layerWeights->layerWeights[6], network.lin3.weights.storage, layerWeights->rows * layerWeights->cols);
-        memcpy(&layerWeights->layerWeights[6 + layerWeights->rows * layerWeights->cols], network.lin3.bias.storage, layerWeights->rows);
+        LOG_SHORT(LOG_DEBUG, "---before");
+        LOG_SHORT(LOG_DEBUG, "weights %f %f %f %f", network.lin3.weights(0, 0), network.lin3.weights(0, 1), network.lin3.weights(1, 0), network.lin3.weights(1, 1));
+        LOG_SHORT(LOG_DEBUG, "bias %f %f %f %f", network.lin3.bias(0, 0), network.lin3.bias(1, 0), network.lin3.bias(2, 0), network.lin3.bias(3, 0));
 
-        LOG_SHORT(LOG_DEBUG, "weights %f %f %f %f", network.lin3.weights(0, 0), network.lin3.weights(0, 1), network.lin3.weights(0, 2), network.lin3.weights(0, 3));
-        LOG_SHORT(LOG_DEBUG, "bias %f %f %f %f", network.lin3.bias(0, 0), network.lin3.bias(0, 1), network.lin3.bias(0, 2), network.lin3.bias(0, 3));
+        for (int r = 0; r < layerWeights->rows; r++) {
+          for (int c = 0; c < layerWeights->cols; c++) {
+            network.lin3.weights(r, c) = layerWeightsFloat[r * layerWeights->cols + c];
+          }
+        }
+
+        for (int r = 0; r < layerWeights->rows; r++) {
+          network.lin3.bias(r, 0) = layerWeightsFloat[layerWeights->rows * layerWeights->cols + r];
+        }
+
+        LOG_SHORT(LOG_DEBUG, "---after");
+        LOG_SHORT(LOG_DEBUG, "weights %f %f %f %f", network.lin3.weights(0, 0), network.lin3.weights(0, 1), network.lin3.weights(1, 0), network.lin3.weights(1, 1));
+        LOG_SHORT(LOG_DEBUG, "bias %f %f %f %f", network.lin3.bias(0, 0), network.lin3.bias(1, 0), network.lin3.bias(2, 0), network.lin3.bias(3, 0));
         break;
       }
 
     case (4):
       {
-        memcpy(&layerWeights->layerWeights[6], network.lin4.weights.storage, layerWeights->rows * layerWeights->cols);
-        memcpy(&layerWeights->layerWeights[6 + layerWeights->rows * layerWeights->cols], network.lin4.bias.storage, layerWeights->rows);
-
+        LOG_SHORT(LOG_DEBUG, "---before");
         LOG_SHORT(LOG_DEBUG, "weights %f %f %f %f", network.lin4.weights(0, 0), network.lin4.weights(0, 1), network.lin4.weights(0, 2), network.lin4.weights(0, 3));
-        LOG_SHORT(LOG_DEBUG, "bias %f %f %f %f", network.lin4.bias(0, 0), network.lin4.bias(0, 1), network.lin4.bias(0, 2), network.lin4.bias(0, 3));
+        LOG_SHORT(LOG_DEBUG, "bias %f %f %f %f", network.lin4.bias(0, 0), network.lin4.bias(1, 0), network.lin4.bias(2, 0), network.lin4.bias(3, 0));
+
+        for (int r = 0; r < layerWeights->rows; r++) {
+          for (int c = 0; c < layerWeights->cols; c++) {
+            network.lin4.weights(r, c) = layerWeightsFloat[r * layerWeights->cols + c];
+          }
+        }
+
+        for (int r = 0; r < layerWeights->rows; r++) {
+          network.lin4.bias(r, 0) = layerWeightsFloat[layerWeights->rows * layerWeights->cols + r];
+        }
+
+        LOG_SHORT(LOG_DEBUG, "---after");
+        LOG_SHORT(LOG_DEBUG, "weights %f %f %f %f", network.lin4.weights(0, 0), network.lin4.weights(0, 1), network.lin4.weights(0, 2), network.lin4.weights(0, 3));
+        LOG_SHORT(LOG_DEBUG, "bias %f %f %f %f", network.lin4.bias(0, 0), network.lin4.bias(1, 0), network.lin4.bias(2, 0), network.lin4.bias(3, 0));
         break;
       }
     default:

@@ -25,7 +25,7 @@ public:
     for (int r = 0; r < ToutputSize; r++) {
       for (int c = 0; c < TinputSize; c++) {
         this->weights(r, c) = float(random(-1000, 1000)) / 1000.0;
-      }
+              }
     }
   }
 
@@ -109,7 +109,7 @@ public:
       if (r >= ToutputSize) {
         buffer[r] = 0.0;
       } else {
-        buffer[r] = this->bias(r + colIndex, 1);
+        buffer[r] = this->bias(r + colIndex, 0);
       }
     }
   }
@@ -122,7 +122,7 @@ public:
 
   void copyBiasFromBuffer(int colIndex, float *buffer, int size) {
     for (int r = 0; (r < size) && (r + colIndex < ToutputSize); r++) {
-      this->bias(r + colIndex, 1) = buffer[r];
+      this->bias(r + colIndex, 0) = buffer[r];
     }
   }
 
