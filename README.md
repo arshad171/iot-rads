@@ -154,7 +154,7 @@ Learn to reconstruct the embeddings.
 Network architecture:
 
 ```
-- - - - - 64  (embeddings) - - - - -
+- - - - - 100 (embeddings) - - - - -
 
       - - 10    (Linear 1) - -
       - - ReLU             - -
@@ -165,7 +165,7 @@ Network architecture:
       - - 10    (Linear 3) - -
       - - ReLU             - -
 
-- - - - - 64   (Linear 4) - - - - -
+- - - - - 100  (Linear 4) - - - - -
 ```
 
 - Code: [network](./platform/src/dnn/network.cpp).
