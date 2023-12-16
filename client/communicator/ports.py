@@ -65,7 +65,7 @@ class SerialChannel(Backend):
         while not self.__port.is_open and not self.__abort_event.is_set():
             try:
                 self.__port = Serial(self.__path,self.__baud,timeout=self.__tout,write_timeout=100,parity=PARITY_NONE,
-                                     bytesize=EIGHTBITS,stopbits=STOPBITS_ONE)
+                                     bytesize=EIGHTBITS,stopbits=STOPBITS_ONE,rtscts=True, dsrdtr=True)
                 self.__port.flush()
                 continue
             except SerialException:
@@ -86,7 +86,19 @@ class SerialChannel(Backend):
 
     def send_packet(self, packet: Packet):
         try:
-            l = self.__port.write(packet.serialize())
+            # l = self.__port.write(packet.serialize())
+            data = packet.serialize()
+            l = 0
+            batch_size = 50
+            for batch_ix in range(1, len(data) // batch_size + 2):
+                try:
+                    data_batch = data[(batch_ix - 1) * batch_size : (batch_ix) * batch_size]
+                    l+= self.__port.write(data_batch)
+                    time.sleep(0.1)
+                except Exception as e:
+                    print(e)
+
+            self.__port.flush()
             print(f"Sent {l} byte{'s' if l != 1 else ''}")
         except SerialException as e:
             raise SerialPortException("Unable to send data through the serial port") from e
