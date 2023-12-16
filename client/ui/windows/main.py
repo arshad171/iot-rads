@@ -94,6 +94,9 @@ class MainWindow(QMainWindow):
         self.__broll_path = None
         self.__broll_idx = None
 
+        # Layer to send
+        self._send_layer_index = 1
+
         # Protocol handler (for sending commands)
         self.__interval = interval
         self.__handlers = handlers
@@ -137,8 +140,6 @@ class MainWindow(QMainWindow):
 
         # Initialize the comboboxes
         self.refresh()
-
-        self._send_layer_index = 1
 
     def get_active_data_source(self) -> str:
         """Returns the index of the active data source"""
@@ -288,7 +289,22 @@ class MainWindow(QMainWindow):
     @pyqtSlot()
     def weight_load(self):
         """ Sends weights to the device """
-        self.__handlers[self.__weight_src_cmb.currentIndex()].send(Packet(None,Command.SET_LOAD_WEIGHTS,DataType.CMD))
+        weights = np.load(f"{self._send_layer_index}_weights.npy")
+        bias = np.load(f"{self._send_layer_index}_bias.npy")
+        self.__handlers[self.__curr_handler].send(
+            Packet(
+                data={
+                    "layer_index": self._send_layer_index,
+                    "weights": weights,
+                    "bias": bias,
+                },
+                command=Command.SET_LOAD_WEIGHTS,
+                dtype=DataType.WTS,
+            )
+        )
+
+        # every click sends the next layer
+        self._send_layer_index = (self._send_layer_index) % 4 + 1
 
     @pyqtSlot(str,str,str)
     def display_alert(self,title: str, text: str, icon: str):
@@ -308,7 +324,7 @@ class MainWindow(QMainWindow):
 
 class MainThread(QThread):
     """Main thread of the client"""
-    INTERVAL = 0.5
+    INTERVAL = 0.1
     MIN = 7.175088256872186e-08
     MAX = 1.5143336895562243e-06
 
@@ -420,21 +436,3 @@ class MainThread(QThread):
 
         np.save(f"{layer_index}_weights.npy", weights)
         np.save(f"{layer_index}_bias.npy", bias)
-
-    def __load_weights(self):
-        weights = np.load(f"{self._send_layer_index}_weights.npy")
-        bias = np.load(f"{self._send_layer_index}_bias.npy")
-        self.__handlers[self.__curr_handler].send(
-            Packet(
-                data={
-                    "layer_index": self._send_layer_index,
-                    "weights": weights,
-                    "bias": bias,
-                },
-                command=Command.SET_LOAD_WEIGHTS,
-                dtype=DataType.WTS,
-            )
-        )
-
-        # every click sends the next layer
-        self._send_layer_index = (self._send_layer_index) % 4 + 1
