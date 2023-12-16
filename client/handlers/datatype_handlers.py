@@ -16,7 +16,10 @@ def register_datatype_decoders(handler: Protocol):
     @handler.register_decoder(dtype=DataType.LOG)
     def decode_log(data: bytes):
         """Decode the bytes into a string"""
-        return data.decode("ascii")
+        try:
+            return data.decode("ascii")
+        except UnicodeDecodeError:
+            return "*** DECODING ERROR ***"
 
     @handler.register_decoder(dtype=DataType.MAT)
     def decode_mat(data: bytes):
