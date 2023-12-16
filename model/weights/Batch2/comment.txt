@@ -1,0 +1,3 @@
+Good training (all iterations complete successfully)
+Bad training dataset (includes anomalies)
+Not even a full training epoch

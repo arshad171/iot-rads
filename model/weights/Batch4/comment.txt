@@ -1,0 +1,1 @@
+Good training, good dataset, final training for ~20-30 epochs
