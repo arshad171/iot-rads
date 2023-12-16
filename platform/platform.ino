@@ -21,7 +21,7 @@ enum State {
 
 // Runtime variables
 static RichMatrix *feature_vector = nullptr;
-static BLERole role = BLERole::PERIPHERAL;
+static BLERole role = BLERole::NONE;
 static State state = State::SYNC_WEIGHTS;
 static int patience;
 
@@ -53,7 +53,7 @@ void setup() {
     PINMODE(D13,INPUT_PULLUP);
 
     // Initialize serial port
-    SP.initialize(BAUD_RATE,1000);
+    SP.initialize(BAUD_RATE,250);
 
     // Setup logging
     set_log_lvl(LOG_LEVEL);
