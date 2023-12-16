@@ -127,10 +127,13 @@ class MainWindow(QMainWindow):
         # Hook up signal handlers to the protocol
         self.__handlers[0].hook_cmd(Command.WRITE_LOG, self.__signal_append_log1)
         self.__handlers[0].hook_cmd(Command.SET_FRAME, self.__signal_picture_set)
+        self.__handlers[0].hook_cmd(Command.SET_BROLL, self.__signal_b_roll_set)
         self.__handlers[1].hook_cmd(Command.WRITE_LOG, self.__signal_append_log2)
         self.__handlers[1].hook_cmd(Command.SET_FRAME, self.__signal_picture_set)
+        self.__handlers[1].hook_cmd(Command.SET_BROLL, self.__signal_b_roll_set)
         self.__handlers[2].hook_cmd(Command.WRITE_LOG, self.__signal_append_log3)
         self.__handlers[2].hook_cmd(Command.SET_FRAME, self.__signal_picture_set)
+        self.__handlers[2].hook_cmd(Command.SET_BROLL, self.__signal_b_roll_set)
 
         # Initialize the comboboxes
         self.refresh()
@@ -281,10 +284,11 @@ class MainWindow(QMainWindow):
     def weight_save(self):
         """ Request weights from device """
         self.__handlers[self.__weight_src_cmb.currentIndex()].send(Packet(None,Command.GET_WEIGHTS,DataType.CMD))
-    
+
     @pyqtSlot()
     def weight_load(self):
-        pass
+        """ Sends weights to the device """
+        self.__handlers[self.__weight_src_cmb.currentIndex()].send(Packet(None,Command.SET_LOAD_WEIGHTS,DataType.CMD))
 
     @pyqtSlot(str,str,str)
     def display_alert(self,title: str, text: str, icon: str):
@@ -304,7 +308,7 @@ class MainWindow(QMainWindow):
 
 class MainThread(QThread):
     """Main thread of the client"""
-    INTERVAL = 0.1
+    INTERVAL = 0.5
     MIN = 7.175088256872186e-08
     MAX = 1.5143336895562243e-06
 
