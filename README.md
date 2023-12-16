@@ -1,25 +1,185 @@
 # Railway Anomaly Detection System (RADS)
 
-## Proof of Concept
+# Data Preprocessing
 
-The POC is run on opensource dataset. Here are the steps:
+- [Raw data](./images-data1/), hard to capture still/well-aligned images.
 
-1. Gather data, run `dump_data/dump_open_data.py`.
+- Preprocessing of images is required so that the model is exposed to relevant information in the images.
 
-2. Parse the data, run `dump_data/parse_open_data.py`.
+- Since we are interested in detecting anomalies on the track, it makes sense to mask out the redundant portions of the image.
 
-3. Generating mask, run the `test_resize.ipynb` to dump the resized image (suitable for the embeddng model). The mask (ROI) can then be manually generated using MATLAB segmenter and export the binary mask with the variable name `mask` and the filename `mask.mat`. Make sure to normalize the binary mask before exporting, i.e. divide it by 255.0.
+## Steps
 
-4. The [interactive notebook](./test_anomaly_detection.ipynb) trains the autoencoder and vizualizes the results on sample images.
+1. Creating a mask: use edge detection and Hough transformation to detect horizontal and vertical lines in the images, solve the intersection and create a dynamic mask for each image.
 
-Note: **For each of the scipts above make sure to checkout the config variables defined at the top of the scripts. These can be used to change the source/dest paths and other parameters**
+1. Apply the mask.
 
-## Real Data
+2. Resize the image to make it compatible with the embedding model.
 
-1.  Gathering the data, run the Arduino sketch [dump_data.ino](./dump_data/dump_data.ino) and the python script [dump_open_data.py](./dump_data/dump_open_data.py) to save the dump.
+3. Code: [image generator](./client/generator.py).
 
-1. Generating mask, run the [test_resize.ipynb](./test_resize.ipynb) to dump the resized image (suitable for the embeddng model). The mask (ROI) can then be manually generated using MATLAB segmenter and export the binary mask with the variable name `mask` and the filename `mask.mat`. Make sure to normalize the binary mask before exporting, i.e. divide it by 255.0.
 
-1. The data and masks are under [train](./images-data1/), [test](./images-data1-test/) and [mask](./images-data1-mask/).
+### Before
+<img src="image-2.png" alt="drawing" width="300"/>
 
-2. Run the [notebook](./test_anomaly_detection.ipynb).
+### After
+<img src="image-1.png" alt="drawing" width="300"/>
+
+
+<!-- ![Alt text](image-1.png) -->
+
+# Neural Network Implementation
+
+<img src="image.png" alt="drawing" width="500"/>
+
+- An elegant neural network implementation from scratch.
+
+- Layers implemented: [Linear](./platform/src/dnn/layers/linear.h), [ReLU](./platform/src/dnn/layers/relu.h), [Squared Loss](./platform/src/dnn/layers/squared.h). Supporting forward and backward propagation.
+
+- Forward propagation: feed the input through the layers (left to right).
+
+- Backpropagation: start computing the gradients (right to left), and accumulate the grads.
+downstream grads = upstream grads * local grads, i.e. $\frac{dL}{dX} = \frac{dL}{dY} * \frac{dY}{dX}$
+
+- And to help alleviate some of the convergence issues, we run a momentum stochastic gradient descent (SGD).
+
+- Linear
+    - Forward: $Y = W * X + b$
+    - Backward: $\frac{\partial L}{\partial X} = W^\top * \frac{\partial L}{\partial Y}$
+    - Grads: $\frac{\partial L}{\partial W} = \frac{\partial L}{\partial Y} * X^\top$, $\frac{\partial L}{\partial b} = \frac{\partial L}{\partial b} * \vec 1$
+
+- ReLU
+    - Forward: $Y = \max(0, X)$
+    - Backward: $\frac{\partial L}{\partial X} = \frac{\partial L}{\partial Y} \cdot \{X > 0\}$
+
+- Squared Loss
+    - Forward: $\text{loss} = \frac{1}{2}|| Y - \hat Y||_2^2$
+    - Backward: $\frac{\partial L}{\partial Y} = Y - \hat Y$
+
+## Autoencoder
+
+Learn to reconstruct the embeddings.
+
+Network architecture:
+
+```
+- - - - - 64  (embeddings) - - - - -
+
+      - - 10    (Linear 1) - -
+      - - ReLU             - -
+
+        - 2     (Linear 2) -
+        - ReLU             -
+
+      - - 10    (Linear 3) - -
+      - - ReLU             - -
+
+- - - - - 64   (Linear 4) - - - - -
+```
+
+- Code: [network](./platform/src/dnn/network.cpp).
+
+## Distributed Learning
+
+1. Each agent would train on a subset of the data.
+
+2. Synchronize the weights (averaging) after every epoch.
+
+3. Repeat.
+
+| **Hyperparameter** | **Value** |
+|:------------------:|:---------:|
+|     Batch Size     |     2     |
+|      Momentum      |    0.2    |
+|    Learning Rate   |   0.0001  |# Data Preprocessing
+
+- [Raw data](./images-data1/), hard to capture still/well-aligned images.
+
+- Preprocessing of images is required so that the model is exposed to relevant information in the images.
+
+- Since we are interested in detecting anomalies on the track, it makes sense to mask out the redundant portions of the image.
+
+## Steps
+
+1. Creating a mask: use edge detection and Hough transformation to detect horizontal and vertical lines in the images, solve the intersection and create a dynamic mask for each image.
+
+1. Apply the mask.
+
+2. Resize the image to make it compatible with the embedding model.
+
+3. Code: [image generator](./client/generator.py).
+
+
+### Before
+<img src="image-2.png" alt="drawing" width="300"/>
+
+### After
+<img src="image-1.png" alt="drawing" width="300"/>
+
+
+<!-- ![Alt text](image-1.png) -->
+
+# Neural Network Implementation
+
+<img src="image.png" alt="drawing" width="500"/>
+
+- An elegant neural network implementation from scratch.
+
+- Layers implemented: [Linear](./platform/src/dnn/layers/linear.h), [ReLU](./platform/src/dnn/layers/relu.h), [Squared Loss](./platform/src/dnn/layers/squared.h). Supporting forward and backward propagation.
+
+- Forward propagation: feed the input through the layers (left to right).
+
+- Backpropagation: start computing the gradients (right to left), and accumulate the grads.
+downstream grads = upstream grads * local grads, i.e. $\frac{dL}{dX} = \frac{dL}{dY} * \frac{dY}{dX}$
+
+- And to help alleviate some of the convergence issues, we run a momentum stochastic gradient descent (SGD).
+
+- Linear
+    - Forward: $Y = W * X + b$
+    - Backward: $\frac{\partial L}{\partial X} = W^\top * \frac{\partial L}{\partial Y}$
+    - Grads: $\frac{\partial L}{\partial W} = \frac{\partial L}{\partial Y} * X^\top$, $\frac{\partial L}{\partial b} = \frac{\partial L}{\partial b} * \vec 1$
+
+- ReLU
+    - Forward: $Y = \max(0, X)$
+    - Backward: $\frac{\partial L}{\partial X} = \frac{\partial L}{\partial Y} \cdot \{X > 0\}$
+
+- Squared Loss
+    - Forward: $\text{loss} = \frac{1}{2}|| Y - \hat Y||_2^2$
+    - Backward: $\frac{\partial L}{\partial Y} = Y - \hat Y$
+
+## Autoencoder
+
+Learn to reconstruct the embeddings.
+
+Network architecture:
+
+```
+- - - - - 64  (embeddings) - - - - -
+
+      - - 10    (Linear 1) - -
+      - - ReLU             - -
+
+        - 2     (Linear 2) -
+        - ReLU             -
+
+      - - 10    (Linear 3) - -
+      - - ReLU             - -
+
+- - - - - 64   (Linear 4) - - - - -
+```
+
+- Code: [network](./platform/src/dnn/network.cpp).
+
+## Distributed Learning
+
+1. Each agent would train on a subset of the data.
+
+2. Synchronize the weights (averaging) after every epoch.
+
+3. Repeat.
+
+| **Hyperparameter** | **Value** |
+|:------------------:|:---------:|
+|     Batch Size     |     2     |
+|      Momentum      |    0.2    |
+|    Learning Rate   |   0.0001  |
