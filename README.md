@@ -1,5 +1,24 @@
 # Railway Anomaly Detection System (RADS)
 
+### Project done as part of Machine Learning for Internet of Things (EITP40), Lund University, Sweden.
+
+## Authors
+
+- Alessandro Celoria
+- Arshad Javeed
+- Basim Elessawi
+- Valentin Lopez Jimenez
+
+## Supervisors
+
+- Amir Aminifar, Associate senior lecturer at Broadband Communication, Lund University.
+- [Baichuan Huang](https://github.com/whubaichuan), Doctoral student at Networks and Security, Lund University. 
+
+## Demos
+
+- Full demo: https://youtu.be/1eEcvNyESvY
+- Short demo: 
+
 # Data Preprocessing
 
 - [Raw data](./images-data1/), hard to capture still/well-aligned images.
