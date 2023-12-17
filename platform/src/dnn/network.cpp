@@ -175,6 +175,11 @@ void initialize_network() {
   dLdb2.Fill(0.0);
   dLdb3.Fill(0.0);
   dLdb4.Fill(0.0);
+
+  network.lin1 = LinearLayer<FEATURE_DIM, out1, BATCH_SIZE>();
+  network.lin2 = LinearLayer<in2, out2, BATCH_SIZE>();
+  network.lin3 = LinearLayer<in3, out3, BATCH_SIZE>();
+  network.lin4 = LinearLayer<in4, out4, BATCH_SIZE>();
 }
 
 void begin_training() {
@@ -292,7 +297,23 @@ void blocking_train() {
     for (int iter = 0; iter < NUM_ITERS; iter++) {
       updateXBatch(true);
       loss += iterate(xBatch);
+      // LOG_SHORT(LOG_DEBUG, "-----after iter");
+      // LOG_SHORT(LOG_DEBUG, "weights layer 1: %f %f %f %f %f", network.lin1.weights(0, 0), network.lin1.weights(0, 1), network.lin1.weights(0, 2), network.lin1.weights(0, 3), network.lin1.weights(0, 4));
+      // LOG_SHORT(LOG_DEBUG, "weights layer 2: %f %f %f %f %f", network.lin2.weights(0, 0), network.lin2.weights(0, 1), network.lin2.weights(0, 2), network.lin2.weights(0, 3), network.lin2.weights(0, 4));
+      // LOG_SHORT(LOG_DEBUG, "weights layer 3: %f %f", network.lin3.weights(0, 0), network.lin3.weights(0, 1));
+      // LOG_SHORT(LOG_DEBUG, "weights layer 4: %f %f %f %f %f", network.lin4.bias(0, 0), network.lin4.bias(0, 1), network.lin4.bias(0, 2), network.lin4.bias(0, 3), network.lin4.bias(0, 4));
+      // LOG_SHORT(LOG_DEBUG, "bias layer 1: %f %f %f %f %f", network.lin1.bias(0, 0), network.lin1.bias(0, 1), network.lin1.bias(0, 2), network.lin1.bias(0, 3), network.lin1.bias(0, 4));
+      // LOG_SHORT(LOG_DEBUG, "bias layer 2: %f %f %f %f %f", network.lin2.bias(0, 0), network.lin2.bias(0, 1), network.lin2.bias(0, 2), network.lin2.bias(0, 3), network.lin2.bias(0, 4));
+      // LOG_SHORT(LOG_DEBUG, "bias layer 3: %f %f", network.lin3.bias(0, 0), network.lin3.bias(0, 1));
+      // LOG_SHORT(LOG_DEBUG, "bias layer 4: %f %f %f %f %f", network.lin4.bias(0, 0), network.lin4.bias(0, 1), network.lin4.bias(0, 2), network.lin4.bias(0, 3), network.lin4.bias(0, 4));
+      // LOG_SHORT(LOG_DEBUG, "-----");
     }
+    // LOG_SHORT(LOG_DEBUG, "-----after epoch");
+    // LOG_SHORT(LOG_DEBUG, "weights layer 1: %f %f %f %f %f", network.lin1.weights(0, 0), network.lin1.weights(0, 1), network.lin1.weights(0, 2), network.lin1.weights(0, 3), network.lin1.weights(0, 4));
+    // LOG_SHORT(LOG_DEBUG, "weights layer 2: %f %f %f %f %f", network.lin2.weights(0, 0), network.lin2.weights(0, 1), network.lin2.weights(0, 2), network.lin2.weights(0, 3), network.lin2.weights(0, 4));
+    // LOG_SHORT(LOG_DEBUG, "weights layer 3: %f %f", network.lin3.weights(0, 0), network.lin3.weights(0, 1));
+    // LOG_SHORT(LOG_DEBUG, "weights layer 4: %f %f %f %f %f", network.lin4.weights(0, 0), network.lin4.weights(0, 1), network.lin4.weights(0, 2), network.lin4.weights(0, 3), network.lin4.weights(0, 4));
+    // LOG_SHORT(LOG_DEBUG, "-----");
     loss /= NUM_ITERS;
     LOG_SHORT(LOG_INFO, "<span style=\"color: #FFD700;\">EPOCH %d || Loss: %f</span>", epoch, loss);
   }
