@@ -65,7 +65,7 @@ downstream grads = upstream grads * local grads, i.e. $\frac{dL}{dX} = \frac{dL}
 - Linear
     - Forward: $Y = W * X + b$
     - Backward: $\frac{\partial L}{\partial X} = W^\top * \frac{\partial L}{\partial Y}$
-    - Grads: $\frac{\partial L}{\partial W} = \frac{\partial L}{\partial Y} * X^\top$, $\frac{\partial L}{\partial b} = \frac{\partial L}{\partial b} * \vec 1$
+    - Grads: $\frac{\partial L}{\partial W} = \frac{\partial L}{\partial Y} * X^\top$, $\frac{\partial L}{\partial b} = \frac{\partial L}{\partial Y} * \vec 1$
 
 - ReLU
     - Forward: $Y = \max(0, X)$
