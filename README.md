@@ -17,7 +17,7 @@
 ## Demos
 
 - Full demo: https://youtu.be/1eEcvNyESvY
-- Short demo: 
+- Short demo: https://youtu.be/KzASbsmRXew
 
 # Data Preprocessing
 
